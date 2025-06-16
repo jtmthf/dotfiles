@@ -146,9 +146,7 @@ cask "docker"
 cask "postman"
 cask "insomnia"
 cask "tableplus"
-cask "sequel-pro"
 cask "sourcetree"
-cask "github-desktop"
 
 # Browsers
 cask "google-chrome"
