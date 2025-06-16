@@ -119,7 +119,6 @@ brew "gnupg"
 
 brew "imagemagick"
 brew "ffmpeg"
-brew "youtube-dl"
 
 # ============================================================================
 # PRODUCTIVITY
