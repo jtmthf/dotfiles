@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -9,232 +9,164 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Get the directory where this script is located
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-print_status() {
-    echo -e "${BLUE}==>${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}✗${NC} $1"
-}
+# Logging functions
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Detect OS
 detect_os() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        OS="macos"
+        echo "macos"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        OS="linux"
+        if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+            echo "wsl"
+        else
+            echo "linux"
+        fi
     else
-        print_error "Unsupported operating system: $OSTYPE"
+        echo "unknown"
+    fi
+}
+
+OS=$(detect_os)
+DOTFILES_DIR="$HOME/.dotfiles"
+BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
+
+log_info "Detected OS: $OS"
+log_info "Dotfiles directory: $DOTFILES_DIR"
+
+# Create backup directory
+mkdir -p "$BACKUP_DIR"
+
+# Backup existing dotfiles
+backup_file() {
+    local file="$1"
+    if [[ -f "$HOME/$file" ]] || [[ -L "$HOME/$file" ]]; then
+        log_info "Backing up existing $file"
+        mv "$HOME/$file" "$BACKUP_DIR/"
+    fi
+}
+
+# Install Homebrew
+install_homebrew() {
+    if ! command -v brew &> /dev/null; then
+        log_info "Installing Homebrew..."
+        if [[ "$OS" == "macos" ]]; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+            # Linux/WSL
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+            # Add Homebrew to PATH for Linux
+            echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.profile"
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        fi
+        log_success "Homebrew installed"
+    else
+        log_info "Homebrew already installed"
+    fi
+}
+
+# Install packages from Brewfile
+install_packages() {
+    log_info "Installing packages from Brewfile..."
+    if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
+        brew bundle --file="$DOTFILES_DIR/Brewfile"
+        log_success "Packages installed"
+    else
+        log_error "Brewfile not found"
         exit 1
     fi
-    print_success "Detected OS: $OS"
 }
 
-# Install package manager
-install_package_manager() {
-    if [[ "$OS" == "macos" ]]; then
-        if ! command -v brew >/dev/null 2>&1; then
-            print_status "Installing Homebrew..."
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-            print_success "Homebrew installed"
-        else
-            print_success "Homebrew already installed"
-        fi
-    elif [[ "$OS" == "linux" ]]; then
-        # Update package lists
-        if command -v apt >/dev/null 2>&1; then
-            print_status "Updating apt packages..."
-            sudo apt update
-        elif command -v yum >/dev/null 2>&1; then
-            print_status "Updating yum packages..."
-            sudo yum update -y
-        fi
-    fi
-}
-
-# Install packages
-install_packages() {
-    if [[ "$OS" == "macos" ]]; then
-        print_status "Installing packages via Homebrew..."
-        brew bundle --file="$DOTFILES_DIR/homebrew/Brewfile"
-        print_success "Packages installed"
-    elif [[ "$OS" == "linux" ]]; then
-        print_status "Installing essential packages..."
-        if command -v apt >/dev/null 2>&1; then
-            sudo apt install -y curl git zsh build-essential
-        elif command -v yum >/dev/null 2>&1; then
-            sudo yum install -y curl git zsh gcc gcc-c++ make
-        fi
-        
-        # Install individual tools for Linux
-        install_linux_tools
-    fi
-}
-
-install_linux_tools() {
-    # Starship
-    if ! command -v starship >/dev/null 2>&1; then
-        print_status "Installing Starship..."
-        curl -sS https://starship.rs/install.sh | sh -s -- -y
+# Setup zsh plugins
+setup_zsh_plugins() {
+    log_info "Setting up zsh plugins..."
+    local plugins_dir="$DOTFILES_DIR/zsh/plugins"
+    mkdir -p "$plugins_dir"
+    
+    # Clone plugins if they don't exist
+    if [[ ! -d "$plugins_dir/zsh-syntax-highlighting" ]]; then
+        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$plugins_dir/zsh-syntax-highlighting"
     fi
     
-    # fzf
-    if ! command -v fzf >/dev/null 2>&1; then
-        print_status "Installing fzf..."
-        git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-        ~/.fzf/install --all
+    if [[ ! -d "$plugins_dir/zsh-autosuggestions" ]]; then
+        git clone https://github.com/zsh-users/zsh-autosuggestions.git "$plugins_dir/zsh-autosuggestions"
     fi
     
-    # ripgrep
-    if ! command -v rg >/dev/null 2>&1; then
-        print_status "Installing ripgrep..."
-        if command -v apt >/dev/null 2>&1; then
-            sudo apt install -y ripgrep
-        elif command -v yum >/dev/null 2>&1; then
-            sudo yum install -y ripgrep
-        fi
+    if [[ ! -d "$plugins_dir/zsh-completions" ]]; then
+        git clone https://github.com/zsh-users/zsh-completions.git "$plugins_dir/zsh-completions"
+    fi
+    
+    log_success "Zsh plugins setup complete"
+}
+
+# Create symlinks
+create_symlinks() {
+    log_info "Creating symlinks..."
+    
+    # Backup and link zsh files
+    backup_file ".zshenv"
+    backup_file ".zprofile"
+    backup_file ".zshrc"
+
+    echo 'export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:=${HOME}/.config}' >> "$HOME/.zshenv"
+    echo 'export ZDOTDIR=${ZDOTDIR:=${XDG_CONFIG_HOME}/zsh}' >> "$HOME/.zshenv"
+    echo 'source $ZDOTDIR/.zshenv' >> "$HOME/.zshenv"
+
+    # Create config directories and symlinks
+    mkdir -p "$HOME/.config/zsh"
+    
+    ln -sf "$DOTFILES_DIR/zsh/.zshenv" "$HOME/.config/zsh/.zshenv"
+    ln -sf "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.config/zsh/.zprofile"
+    ln -sf "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.config/zsh/.zshrc"
+    
+    # Starship config
+    ln -sf "$DOTFILES_DIR/config/starship.toml" "$HOME/.config/starship.toml"
+    
+    # Mise config
+    mkdir -p "$HOME/.config/mise"
+    ln -sf "$DOTFILES_DIR/config/mise/config.toml" "$HOME/.config/mise/config.toml"
+    
+    log_success "Symlinks created"
+}
+
+# Setup services
+setup_services() {
+    log_info "Setting up services..."
+    if [[ -f "$DOTFILES_DIR/scripts/setup-services.sh" ]]; then
+        zsh "$DOTFILES_DIR/scripts/setup-services.zsh"
     fi
 }
 
-# Create necessary directories
-create_directories() {
-    print_status "Creating directories..."
-    mkdir -p ~/.config/zsh/plugins
-    mkdir -p ~/.config
-    print_success "Directories created"
-}
-
-# Install zsh plugins
-install_zsh_plugins() {
-    print_status "Installing zsh plugins..."
-    
-    PLUGIN_DIR="$HOME/.config/zsh/plugins"
-    
-    # zsh-syntax-highlighting
-    if [[ ! -d "$PLUGIN_DIR/zsh-syntax-highlighting" ]]; then
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$PLUGIN_DIR/zsh-syntax-highlighting"
-    fi
-    
-    # zsh-autosuggestions
-    if [[ ! -d "$PLUGIN_DIR/zsh-autosuggestions" ]]; then
-        git clone https://github.com/zsh-users/zsh-autosuggestions.git "$PLUGIN_DIR/zsh-autosuggestions"
-    fi
-    
-    # zsh-completions
-    if [[ ! -d "$PLUGIN_DIR/zsh-completions" ]]; then
-        git clone https://github.com/zsh-users/zsh-completions.git "$PLUGIN_DIR/zsh-completions"
-    fi
-    
-    print_success "Zsh plugins installed"
-}
-
-# Link configuration files
-link_configs() {
-    print_status "Linking configuration files..."
-    
-    # Backup existing files
-    backup_if_exists ~/.zshrc
-    backup_if_exists ~/.zshenv
-    backup_if_exists ~/.gitconfig
-    backup_if_exists ~/.config/starship.toml
-    
-    # Create symlinks
-    ln -sf "$DOTFILES_DIR/zsh/.zshrc" ~/.zshrc
-    ln -sf "$DOTFILES_DIR/zsh/.zshenv" ~/.zshenv
-    ln -sf "$DOTFILES_DIR/config/.gitconfig" ~/.gitconfig
-    ln -sf "$DOTFILES_DIR/config/starship.toml" ~/.config/starship.toml
-    
-    print_success "Configuration files linked"
-}
-
-backup_if_exists() {
-    if [[ -f "$1" && ! -L "$1" ]]; then
-        print_warning "Backing up existing $1 to $1.backup"
-        mv "$1" "$1.backup"
+# Setup Colima
+setup_colima() {
+    log_info "Setting up Colima..."
+    if [[ -f "$DOTFILES_DIR/scripts/setup-colima.sh" ]]; then
+        zsh "$DOTFILES_DIR/scripts/setup-colima.zsh"
     fi
 }
 
-# Install development environments
-install_dev_environments() {
-    print_status "Setting up development environments..."
-    
-    # Node.js via nvm
-    if [[ ! -d "$HOME/.nvm" ]]; then
-        print_status "Installing nvm..."
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-        
-        # Source nvm and install latest LTS Node
-        export NVM_DIR="$HOME/.nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        nvm install --lts
-        nvm use --lts
-    fi
-    
-    # Ruby via rbenv (if not on macOS where it's handled by Homebrew)
-    if [[ "$OS" == "linux" && ! -d "$HOME/.rbenv" ]]; then
-        print_status "Installing rbenv..."
-        git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-        git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-    fi
-    
-    # Python via pyenv (if not on macOS where it's handled by Homebrew)
-    if [[ "$OS" == "linux" && ! -d "$HOME/.pyenv" ]]; then
-        print_status "Installing pyenv..."
-        git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-    fi
-    
-    print_success "Development environments ready"
-}
-
-# Change default shell to zsh
-change_shell() {
-    if [[ "$SHELL" != */zsh ]]; then
-        print_status "Changing default shell to zsh..."
-        if command -v zsh >/dev/null 2>&1; then
-            chsh -s "$(which zsh)"
-            print_success "Default shell changed to zsh"
-            print_warning "Please restart your terminal or run 'exec zsh' to start using the new configuration"
-        else
-            print_error "zsh not found in PATH"
-        fi
-    else
-        print_success "zsh is already the default shell"
-    fi
-}
-
-# Main installation function
+# Main installation
 main() {
-    print_status "Starting dotfiles installation..."
+    log_info "Starting dotfiles installation..."
     
-    detect_os
-    install_package_manager
+    install_homebrew
     install_packages
-    create_directories
-    install_zsh_plugins
-    link_configs
-    install_dev_environments
-    change_shell
+    setup_zsh_plugins
+    create_symlinks
     
-    print_success "Dotfiles installation complete!"
-    echo
-    print_status "Next steps:"
-    echo "  1. Restart your terminal or run: exec zsh"
-    echo "  2. Install Node.js LTS: nvm install --lts && nvm use --lts"
-    echo "  3. Install latest Ruby: rbenv install 3.1.0 && rbenv global 3.1.0"
-    echo "  4. Install latest Python: pyenv install 3.11.0 && pyenv global 3.11.0"
-    echo
-    print_status "Enjoy your new development environment! 🚀"
+    if [[ "$OS" == "macos" ]]; then
+        setup_services
+        setup_colima
+    fi
+    
+    log_success "Dotfiles installation complete!"
+    log_info "Please restart your terminal or run: source ~/.zshrc"
+    log_info "Backup files are in: $BACKUP_DIR"
 }
 
 # Run main function

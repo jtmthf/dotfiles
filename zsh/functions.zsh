@@ -1,58 +1,18 @@
-# ~/.config/zsh/functions.zsh - Custom functions
-
-# ============================================================================
-# FILE AND DIRECTORY OPERATIONS
-# ============================================================================
+# Personal Functions
+# Useful utilities and shortcuts
 
 # Create directory and cd into it
 mkcd() {
     mkdir -p "$1" && cd "$1"
 }
 
-# Move up n directories
-up() {
-    local d=""
-    local limit="${1:-1}"
-    for ((i=1; i<=limit; i++)); do
-        d="../$d"
-    done
-    cd "$d"
-}
-
-# Find files by name
-ff() {
-    find . -type f -name "*$1*" 2>/dev/null
-}
-
-# Find directories by name
-fd() {
-    find . -type d -name "*$1*" 2>/dev/null
-}
-
-# Show file info
-info() {
-    if [[ -f "$1" ]]; then
-        echo "File: $1"
-        echo "Size: $(du -h "$1" | cut -f1)"
-        echo "Type: $(file -b "$1")"
-        echo "Permissions: $(ls -l "$1" | cut -d' ' -f1)"
-        echo "Last modified: $(stat -c %y "$1" 2>/dev/null || stat -f %Sm "$1")"
-    elif [[ -d "$1" ]]; then
-        echo "Directory: $1"
-        echo "Contents: $(ls -1 "$1" | wc -l) items"
-        echo "Size: $(du -sh "$1" | cut -f1)"
-        echo "Permissions: $(ls -ld "$1" | cut -d' ' -f1)"
-    else
-        echo "File or directory not found: $1"
-    fi
-}
-
-# ============================================================================
-# ARCHIVE OPERATIONS
-# ============================================================================
-
-# Extract any type of archive
+# Extract various archive formats
 extract() {
+    if [[ -z "$1" ]]; then
+        echo "Usage: extract <archive>"
+        return 1
+    fi
+    
     if [[ -f "$1" ]]; then
         case "$1" in
             *.tar.bz2)   tar xjf "$1"     ;;
@@ -66,402 +26,274 @@ extract() {
             *.zip)       unzip "$1"       ;;
             *.Z)         uncompress "$1"  ;;
             *.7z)        7z x "$1"        ;;
-            *.xz)        unxz "$1"        ;;
-            *.exe)       cabextract "$1"  ;;
-            *)           echo "'$1': unrecognized file compression" ;;
+            *)           echo "'$1' cannot be extracted via extract()" ;;
         esac
     else
         echo "'$1' is not a valid file"
     fi
 }
 
-# Create archive
-compress() {
-    if [[ -n "$1" ]]; then
-        local file="$1"
-        case "$2" in
-            tar.bz2|tbz2) tar cjf "$file.tar.bz2" "$file" ;;
-            tar.gz|tgz)   tar czf "$file.tar.gz" "$file"  ;;
-            tar)          tar cf "$file.tar" "$file"      ;;
-            bz2)          bzip2 "$file"                   ;;
-            gz)           gzip "$file"                    ;;
-            zip)          zip -r "$file.zip" "$file"      ;;
-            *)            echo "Usage: compress <file> <tar.bz2|tar.gz|tar|bz2|gz|zip>" ;;
-        esac
-    else
-        echo "Usage: compress <file> <format>"
+# Find and replace in files
+findreplace() {
+    if [[ $# -ne 3 ]]; then
+        echo "Usage: findreplace <search_pattern> <replace_pattern> <file_pattern>"
+        return 1
     fi
+    
+    find . -name "$3" -type f -exec sed -i '' "s/$1/$2/g" {} +
 }
 
-# ============================================================================
-# DEVELOPMENT HELPERS
-# ============================================================================
-
-# Clone and cd into repository
-clone() {
-    git clone "$1" && cd "$(basename "$1" .git)"
-}
-
-# Create new project directory with git
-newproject() {
+# Quick file backup
+backup() {
     if [[ -z "$1" ]]; then
-        echo "Usage: newproject <project-name>"
+        echo "Usage: backup <file>"
         return 1
     fi
     
-    mkdir -p "$1"
-    cd "$1"
-    git init
-    touch README.md .gitignore
-    echo "# $1" > README.md
-    echo "Created new project: $1"
+    cp "$1" "$1.backup.$(date +%Y%m%d_%H%M%S)"
+    echo "Backup created: $1.backup.$(date +%Y%m%d_%H%M%S)"
 }
 
-# Quick commit with message
-qcommit() {
-    git add -A && git commit -m "$1"
-}
-
-# Show git log with stats
-glog() {
-    git log --oneline --graph --decorate --all "${@:-HEAD~10..HEAD}"
-}
-
-# Show current branch
-current_branch() {
-    git branch 2>/dev/null | grep '^*' | cut -d' ' -f2
-}
-
-# Push current branch to origin
-gpush() {
-    local branch=$(current_branch)
-    git push origin "$branch"
-}
-
-# ============================================================================
-# NETWORK AND WEB
-# ============================================================================
-
-# Get external IP
-myip() {
-    curl -s ifconfig.me
-}
-
-# Get local IP
-localip() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        ipconfig getifaddr en0
-    else
-        hostname -I | cut -d' ' -f1
-    fi
-}
-
-# Check if website is up
-isup() {
-    local url="$1"
-    if curl -s --head "$url" | head -n 1 | grep -q "200 OK"; then
-        echo "$url is up"
-    else
-        echo "$url is down"
-    fi
-}
-
-# Download file with progress bar
-download() {
-    if command -v aria2c >/dev/null 2>&1; then
-        aria2c --max-connection-per-server=5 --continue "$1"
-    else
-        wget --progress=bar --show-progress "$1"
-    fi
-}
-
-# Simple HTTP server
-serve() {
-    local port="${1:-8000}"
-    echo "Starting HTTP server on port $port..."
-    python -m http.server "$port"
-}
-
-# ============================================================================
-# SYSTEM UTILITIES
-# ============================================================================
-
-# Show disk usage for current directory
-diskusage() {
-    du -sh * | sort -hr
-}
-
-# Show largest files in directory
-largest() {
-    find "${1:-.}" -type f -exec du -h {} + | sort -hr | head -20
-}
-
-# Show processes using most CPU
-topcpu() {
-    ps aux --sort=-%cpu | head -20
-}
-
-# Show processes using most memory
-topmem() {
-    ps aux --sort=-%mem | head -20
-}
-
-# Kill process by name
-killproc() {
+# Get file size in human readable format
+filesize() {
     if [[ -z "$1" ]]; then
-        echo "Usage: killproc <process-name>"
+        echo "Usage: filesize <file>"
         return 1
     fi
     
-    local pids=$(pgrep -f "$1")
-    if [[ -n "$pids" ]]; then
-        echo "Killing processes matching '$1':"
-        echo "$pids" | xargs ps -p
-        echo "$pids" | xargs kill
+    if command -v dust &> /dev/null; then
+        dust -d0 "$1"
     else
-        echo "No processes found matching '$1'"
-    fi
-}
-
-# ============================================================================
-# TEXT PROCESSING
-# ============================================================================
-
-# Count lines in file
-lines() {
-    wc -l "$1" | cut -d' ' -f1
-}
-
-# Remove duplicate lines
-dedup() {
-    sort "$1" | uniq
-}
-
-# Convert text to lowercase
-lower() {
-    echo "$1" | tr '[:upper:]' '[:lower:]'
-}
-
-# Convert text to uppercase
-upper() {
-    echo "$1" | tr '[:lower:]' '[:upper:]'
-}
-
-# URL encode
-urlencode() {
-    python -c "import sys, urllib.parse as ul; print(ul.quote_plus(sys.argv[1]))" "$1"
-}
-
-# URL decode
-urldecode() {
-    python -c "import sys, urllib.parse as ul; print(ul.unquote_plus(sys.argv[1]))" "$1"
-}
-
-# ============================================================================
-# DEVELOPMENT ENVIRONMENT
-# ============================================================================
-
-# Quick Node.js project setup
-nodeproject() {
-    if [[ -z "$1" ]]; then
-        echo "Usage: nodeproject <project-name>"
-        return 1
-    fi
-    
-    mkdir -p "$1"
-    cd "$1"
-    npm init -y
-    mkdir src test
-    touch src/index.js test/index.test.js .gitignore
-    echo "node_modules/" > .gitignore
-    echo "Created Node.js project: $1"
-}
-
-# Quick Python project setup
-pyproject() {
-    if [[ -z "$1" ]]; then
-        echo "Usage: pyproject <project-name>"
-        return 1
-    fi
-    
-    mkdir -p "$1"
-    cd "$1"
-    python -m venv venv
-    source venv/bin/activate
-    mkdir src tests
-    touch src/__init__.py src/main.py tests/__init__.py tests/test_main.py
-    touch requirements.txt .gitignore README.md
-    echo "venv/" > .gitignore
-    echo "__pycache__/" >> .gitignore
-    echo "*.pyc" >> .gitignore
-    echo "Created Python project: $1"
-}
-
-# Activate Python virtual environment
-venv() {
-    if [[ -f "venv/bin/activate" ]]; then
-        source venv/bin/activate
-    elif [[ -f ".venv/bin/activate" ]]; then
-        source .venv/bin/activate
-    else
-        echo "No virtual environment found"
-        return 1
-    fi
-}
-
-# ============================================================================
-# PRODUCTIVITY HELPERS
-# ============================================================================
-
-# Timer function
-timer() {
-    local seconds="$1"
-    local message="${2:-Timer finished}"
-    
-    if [[ -z "$seconds" ]]; then
-        echo "Usage: timer <seconds> [message]"
-        return 1
-    fi
-    
-    echo "Timer set for $seconds seconds..."
-    sleep "$seconds"
-    echo "$message"
-    
-    # Try to send notification if available
-    if command -v notify-send >/dev/null 2>&1; then
-        notify-send "Timer" "$message"
-    elif command -v osascript >/dev/null 2>&1; then
-        osascript -e "display notification \"$message\" with title \"Timer\""
+        du -sh "$1"
     fi
 }
 
 # Generate random password
 genpass() {
-    local length="${1:-16}"
-    openssl rand -base64 "$length" | tr -d "=+/" | cut -c1-"$length"
+    local length=${1:-16}
+    openssl rand -base64 32 | cut -c1-$length
 }
 
-# Weather information
+# Weather function
 weather() {
-    local location="${1:-}"
-    if [[ -n "$location" ]]; then
-        curl -s "wttr.in/$location"
-    else
-        curl -s "wttr.in"
-    fi
+    local location=${1:-}
+    curl -s "wttr.in/$location?format=3"
 }
 
-# Quick note taking
-note() {
-    local note_file="$HOME/notes/$(date +%Y-%m-%d).md"
-    mkdir -p "$(dirname "$note_file")"
-    
+# QR code generator
+qr() {
     if [[ -z "$1" ]]; then
-        $EDITOR "$note_file"
-    else
-        echo "## $(date +%H:%M:%S)" >> "$note_file"
-        echo "$*" >> "$note_file"
-        echo "" >> "$note_file"
-        echo "Note added to $note_file"
+        echo "Usage: qr <text>"
+        return 1
     fi
+    
+    curl -s "qrenco.de/$1"
 }
 
-# ============================================================================
-# MACOS SPECIFIC FUNCTIONS
-# ============================================================================
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Quick Look
-    ql() {
-        qlmanage -p "$1" &>/dev/null
-    }
-    
-    # Empty trash
-    emptytrash() {
-        sudo rm -rfv /Volumes/*/.Trashes
-        sudo rm -rfv ~/.Trash
-        sudo rm -rfv /private/var/log/asl/*.asl
-        echo "Trash emptied"
-    }
-    
-    # Flush DNS
-    flushdns() {
-        sudo dscacheutil -flushcache
-        sudo killall -HUP mDNSResponder
-        echo "DNS cache flushed"
-    }
-    
-    # Show/hide hidden files
-    showfiles() {
-        defaults write com.apple.finder AppleShowAllFiles YES
-        killall Finder
-        echo "Hidden files shown"
-    }
-    
-    hidefiles() {
-        defaults write com.apple.finder AppleShowAllFiles NO
-        killall Finder
-        echo "Hidden files hidden"
-    }
-fi
-
-# ============================================================================
-# DOCKER HELPERS
-# ============================================================================
-
-# Docker cleanup
-dockerclean() {
+# Docker cleanup functions
+docker-cleanup() {
     echo "Cleaning up Docker..."
-    docker system prune -af
-    docker volume prune -f
-    echo "Docker cleanup complete"
+    docker system prune -af --volumes
+    docker image prune -af
 }
 
-# Docker container shell
-dsh() {
+docker-stop-all() {
+    docker stop $(docker ps -aq) 2>/dev/null || echo "No running containers"
+}
+
+docker-rm-all() {
+    docker rm $(docker ps -aq) 2>/dev/null || echo "No containers to remove"
+}
+
+# Git functions
+git-cleanup() {
+    echo "Cleaning up Git repository..."
+    git branch --merged | grep -v "\*\|main\|master\|develop" | xargs -n 1 git branch -d
+    git remote prune origin
+    git gc --prune=now
+}
+
+git-contributors() {
+    git log --format='%aN <%aE>' | sort -u
+}
+
+git-stats() {
+    echo "Repository Statistics:"
+    echo "====================="
+    echo "Total commits: $(git rev-list --count HEAD)"
+    echo "Total contributors: $(git log --format='%aN' | sort -u | wc -l)"
+    echo "Repository size: $(du -sh .git | cut -f1)"
+    echo ""
+    echo "Top 10 contributors:"
+    git log --format='%aN' | sort | uniq -c | sort -rn | head -10
+}
+
+# Development environment functions
+dev-setup() {
+    local project_name=${1:-"new-project"}
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Initialize git
+    git init
+    
+    # Create basic structure
+    mkdir -p {src,tests,docs}
+    touch README.md .gitignore
+    
+    # Create basic .gitignore
+    cat > .gitignore << 'GITIGNORE'
+# Dependencies
+node_modules/
+venv/
+env/
+.env
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+GITIGNORE
+    
+    echo "Development environment setup complete for $project_name"
+}
+
+# Network utility functions
+port-check() {
     if [[ -z "$1" ]]; then
-        echo "Usage: dsh <container-name-or-id>"
+        echo "Usage: port-check <port>"
         return 1
     fi
     
-    docker exec -it "$1" /bin/bash || docker exec -it "$1" /bin/sh
+    lsof -i ":$1"
 }
 
-# ============================================================================
-# SEARCH HELPERS
-# ============================================================================
-
-# Search for text in files
-search() {
+port-kill() {
     if [[ -z "$1" ]]; then
-        echo "Usage: search <pattern> [directory]"
+        echo "Usage: port-kill <port>"
         return 1
     fi
     
-    local pattern="$1"
-    local dir="${2:-.}"
+    lsof -ti ":$1" | xargs kill -9
+}
+
+# System information
+sysinfo() {
+    echo "System Information:"
+    echo "=================="
+    echo "OS: $(uname -s)"
+    echo "Kernel: $(uname -r)"
+    echo "Architecture: $(uname -m)"
+    echo "Hostname: $(hostname)"
+    echo "Uptime: $(uptime | awk '{print $3,$4}' | sed 's/,//')"
     
-    if command -v rg >/dev/null 2>&1; then
-        rg "$pattern" "$dir"
-    else
-        grep -r "$pattern" "$dir"
+    if command -v free &> /dev/null; then
+        echo "Memory: $(free -h | awk '/^Mem:/ {print $3 "/" $2}')"
+    fi
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macOS Version: $(sw_vers -productVersion)"
+        echo "Memory: $(top -l 1 -s 0 | grep PhysMem | awk '{print $2}')"
     fi
 }
 
-# Find and replace in files
-replace() {
-    if [[ -z "$2" ]]; then
-        echo "Usage: replace <old> <new> [file-pattern]"
+# Benchmark function
+bench() {
+    if [[ -z "$1" ]]; then
+        echo "Usage: bench <command>"
         return 1
     fi
     
-    local old="$1"
-    local new="$2"
-    local pattern="${3:-*}"
-    
-    if command -v fd >/dev/null 2>&1; then
-        fd "$pattern" -x sed -i "s/$old/$new/g" {}
+    if command -v hyperfine &> /dev/null; then
+        hyperfine "$1"
     else
-        find . -name "$pattern" -type f -exec sed -i "s/$old/$new/g" {} +
+        time "$1"
+    fi
+}
+
+# Code statistics
+codestats() {
+    if command -v tokei &> /dev/null; then
+        tokei
+    else
+        find . -name "*.py" -o -name "*.js" -o -name "*.go" -o -name "*.rs" -o -name "*.java" | xargs wc -l
+    fi
+}
+
+# Update all development tools
+update-all() {
+    echo "Updating all development tools..."
+    
+    # Homebrew
+    if command -v brew &> /dev/null; then
+        echo "Updating Homebrew..."
+        brew update && brew upgrade && brew cleanup
+    fi
+    
+    # Mise
+    if command -v mise &> /dev/null; then
+        echo "Updating Mise..."
+        mise upgrade
+    fi
+    
+    # Git repositories (plugins)
+    echo "Updating Git repositories..."
+    local plugins_dir="$HOME/.dotfiles/zsh/plugins"
+    for plugin in "$plugins_dir"/*; do
+        if [[ -d "$plugin/.git" ]]; then
+            echo "Updating $(basename "$plugin")..."
+            (cd "$plugin" && git pull)
+        fi
+    done
+    
+    echo "All updates complete!"
+}
+
+# Find large files
+findlarge() {
+    local size=${1:-100M}
+    find . -type f -size +"$size" -exec ls -lh {} + | sort -k5 -hr
+}
+
+# Process monitoring
+watch-process() {
+    if [[ -z "$1" ]]; then
+        echo "Usage: watch-process <process_name>"
+        return 1
+    fi
+    
+    watch -n 1 "ps aux | grep '$1' | grep -v grep"
+}
+
+# JSON pretty print
+json-pretty() {
+    if [[ -z "$1" ]]; then
+        python3 -m json.tool
+    else
+        python3 -m json.tool "$1"
+    fi
+}
+
+# YAML pretty print (requires yq)
+yaml-pretty() {
+    if command -v yq &> /dev/null; then
+        if [[ -z "$1" ]]; then
+            yq eval '.' -
+        else
+            yq eval '.' "$1"
+        fi
+    else
+        echo "yq is required for yaml-pretty function"
     fi
 }

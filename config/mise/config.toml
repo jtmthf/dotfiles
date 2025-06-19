@@ -1,0 +1,30 @@
+# Mise Configuration
+# Development environment management
+
+[tools]
+# Node.js
+node = "lts"
+
+# Python
+python = "3.11"
+
+# Java
+java = "openjdk-17"
+
+# Ruby
+ruby = "3.2"
+
+[env]
+# Global environment variables
+EDITOR = "nvim"
+PAGER = "bat"
+
+[settings]
+# Auto-install tools
+auto_install = true
+
+# Use legacy version files
+legacy_version_file = true
+
+[plugins]
+# Additional plugins can be configured here

@@ -1,136 +1,81 @@
-# ~/.zshenv - Environment variables for zsh
-# This file is always sourced, so keep it fast and minimal
+# .zshenv - Environment Setup
+# This file is ALWAYS sourced by zsh, regardless of shell type
+# Keep this file lightweight - only essential environment variables
 
-# ============================================================================
-# XDG BASE DIRECTORIES
-# ============================================================================
+# XDG Base Directory Specification
+# Define these early as other configs depend on them
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_CACHE_HOME="$HOME/.cache"
-export XDG_STATE_HOME="$HOME/.local/state"
+# Ensure XDG directories exist
+[[ -d "$XDG_CONFIG_HOME" ]] || mkdir -p "$XDG_CONFIG_HOME"
+[[ -d "$XDG_DATA_HOME" ]] || mkdir -p "$XDG_DATA_HOME"
+[[ -d "$XDG_CACHE_HOME" ]] || mkdir -p "$XDG_CACHE_HOME"
+[[ -d "$XDG_STATE_HOME" ]] || mkdir -p "$XDG_STATE_HOME"
 
-# ============================================================================
-# DEFAULT APPLICATIONS
-# ============================================================================
+# Language and locale (set early)
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
-export EDITOR='vim'
-export VISUAL='vim'
-export PAGER='less'
-export BROWSER='open'
+# Core editor settings
+export EDITOR="${EDITOR:-nvim}"
+export VISUAL="${VISUAL:-nvim}"
 
-# ============================================================================
-# LANGUAGE & LOCALE
-# ============================================================================
-
-export LANG='en_US.UTF-8'
-export LC_ALL='en_US.UTF-8'
-
-# ============================================================================
-# DEVELOPMENT TOOLS
-# ============================================================================
-
-# Node.js
-export NVM_DIR="$HOME/.nvm"
-export NPM_CONFIG_PREFIX="$HOME/.npm-global"
-
-# Ruby
-export RBENV_ROOT="$HOME/.rbenv"
-
-# Python
-export PYENV_ROOT="$HOME/.pyenv"
-export PYTHONDONTWRITEBYTECODE=1
-
-# Go
-export GOPATH="$HOME/go"
-export GO111MODULE=on
-
-# Rust
-export CARGO_HOME="$HOME/.cargo"
-export RUSTUP_HOME="$HOME/.rustup"
-
-# Java (if using SDKMAN)
-export SDKMAN_DIR="$HOME/.sdkman"
-
-# ============================================================================
-# TOOL CONFIGURATIONS
-# ============================================================================
-
-# Less
-export LESS='-F -g -i -M -R -S -w -X -z-4'
-export LESSHISTFILE="$XDG_CACHE_HOME/less/history"
-
-# Grep
-export GREP_OPTIONS='--color=auto'
-
-# FZF
-export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
-
-# GPG
-export GPG_TTY=$(tty)
-
-# SSH
-export SSH_KEY_PATH="$HOME/.ssh/id_rsa"
-
-# ============================================================================
-# PERFORMANCE & SECURITY
-# ============================================================================
-
-# History
-export HISTFILE="$XDG_STATE_HOME/zsh/history"
-export HISTSIZE=50000
-export SAVEHIST=10000
-
-# Disable analytics for various tools
-export HOMEBREW_NO_ANALYTICS=1
-export DOTNET_CLI_TELEMETRY_OPTOUT=1
-export GATSBY_TELEMETRY_DISABLED=1
-export NEXT_TELEMETRY_DISABLED=1
-
-# ============================================================================
-# PATH MODIFICATIONS
-# ============================================================================
-
-# Function to safely add to PATH
-add_to_path() {
-    case ":$PATH:" in
-        *":$1:"*) ;;
-        *) PATH="$1:$PATH" ;;
-    esac
-}
-
-# Add user directories
-add_to_path "$HOME/.local/bin"
-add_to_path "$HOME/bin"
-
-# Add development tool directories
-add_to_path "$CARGO_HOME/bin"
-add_to_path "$GOPATH/bin"
-add_to_path "$NPM_CONFIG_PREFIX/bin"
-
-# macOS specific
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Homebrew paths
-    if [[ -d /opt/homebrew ]]; then
-        add_to_path "/opt/homebrew/bin"
-        add_to_path "/opt/homebrew/sbin"
-        export HOMEBREW_PREFIX="/opt/homebrew"
-    elif [[ -d /usr/local/Homebrew ]]; then
-        add_to_path "/usr/local/bin"
-        add_to_path "/usr/local/sbin"  
-        export HOMEBREW_PREFIX="/usr/local"
-    fi
+# Essential PATH setup
+# Build PATH efficiently without duplicates
+typeset -U path PATH
+path=(
+    # Homebrew paths (macOS and Linux)
+    /opt/homebrew/bin
+    /opt/homebrew/sbin
+    /usr/local/bin
+    /usr/local/sbin
+    /home/linuxbrew/.linuxbrew/bin
+    /home/linuxbrew/.linuxbrew/sbin
     
-    # macOS system paths
-    add_to_path "/usr/local/bin"
-    add_to_path "/System/Cryptexes/App/usr/bin"
-fi
+    # User paths
+    "$HOME/.local/bin"
+    "$HOME/bin"
+    
+    # System paths
+    /usr/bin
+    /bin
+    /usr/sbin
+    /sbin
+    
+    # Keep existing PATH
+    $path
+)
 
-export PATH
+# Remove non-existent paths for cleaner PATH
+path=($^path(N-/))
 
-# ============================================================================
-# CLEANUP
-# ============================================================================
+# Essential environment variables only
+export PAGER="${PAGER:-less}"
+export LESS="-R -M -i -j5"
 
-# Remove function after use
-unset -f add_to_path
+# History file location (XDG compliant)
+export HISTFILE="$XDG_DATA_HOME/zsh/history"
+
+# Zsh configuration location
+export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
+
+# Development environment flag
+export DEVELOPMENT_ENVIRONMENT="${DEVELOPMENT_ENVIRONMENT:-local}"
+
+# Skip global compinit for faster startup
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_ANALYTICS=1
+
+# Mise (runtime manager) - minimal setup
+export MISE_DATA_DIR="$XDG_DATA_HOME/mise"
+export MISE_CONFIG_DIR="$XDG_CONFIG_HOME/mise"
+export MISE_CACHE_DIR="$XDG_CACHE_HOME/mise"
+
+# GPG TTY for signing
+export GPG_TTY="$(tty)"
+
+# Dotfiles directory
+export DOTFILES="$HOME/.dotfiles"

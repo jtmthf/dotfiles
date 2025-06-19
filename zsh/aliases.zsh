@@ -1,8 +1,5 @@
-# ~/.config/zsh/aliases.zsh - Aliases and shortcuts
-
-# ============================================================================
-# BASIC COMMANDS
-# ============================================================================
+# Personal Aliases
+# Modern replacements and common shortcuts
 
 # Navigation
 alias ..='cd ..'
@@ -12,351 +9,181 @@ alias .....='cd ../../../..'
 alias ~='cd ~'
 alias -- -='cd -'
 
-# List files
-if command -v exa >/dev/null 2>&1; then
-    alias ls='exa --color=auto --group-directories-first'
-    alias ll='exa -l --color=auto --group-directories-first'
-    alias la='exa -la --color=auto --group-directories-first'
-    alias lt='exa --tree --color=auto --group-directories-first'
-    alias l='exa -la --color=auto --group-directories-first'
+# Modern ls replacements
+if command -v exa &> /dev/null; then
+    alias ls='exa --group-directories-first'
+    alias la='exa -la --group-directories-first'
+    alias ll='exa -l --group-directories-first'
+    alias lt='exa --tree --level=2'
+    alias lta='exa --tree --level=2 -a'
 else
     alias ls='ls --color=auto'
-    alias ll='ls -alF'
-    alias la='ls -A'
-    alias l='ls -CF'
+    alias la='ls -la'
+    alias ll='ls -l'
 fi
 
-# File operations
-alias cp='cp -i'
-alias mv='mv -i'
-alias rm='rm -i'
-alias mkdir='mkdir -p'
-
-# Text viewing
-if command -v bat >/dev/null 2>&1; then
+# Modern cat replacement
+if command -v bat &> /dev/null; then
     alias cat='bat'
-    alias less='bat'
-else
-    alias cat='cat -n'
+    alias catp='bat --plain'
 fi
 
-# Process management
-alias ps='ps aux'
-alias jobs='jobs -l'
+# Modern grep replacement
+if command -v ripgrep &> /dev/null; then
+    alias grep='rg'
+fi
 
-# Disk usage
-alias df='df -h'
-alias du='du -h'
-alias free='free -h'
+# Modern find replacement
+if command -v fd &> /dev/null; then
+    alias find='fd'
+fi
 
-# ============================================================================
-# DEVELOPMENT TOOLS
-# ============================================================================
+# Modern du replacement
+if command -v dust &> /dev/null; then
+    alias du='dust'
+fi
+
+# Modern df replacement
+if command -v duf &> /dev/null; then
+    alias df='duf'
+fi
+
+# Modern ps replacement
+if command -v procs &> /dev/null; then
+    alias ps='procs'
+fi
+
+# Modern top replacement
+if command -v bottom &> /dev/null; then
+    alias top='btm'
+fi
 
 # Git aliases
 alias g='git'
 alias ga='git add'
-alias gaa='git add --all'
-alias gb='git branch'
-alias gba='git branch -a'
-alias gbd='git branch -d'
-alias gc='git commit -v'
-alias gca='git commit -v -a'
-alias gcam='git commit -a -m'
+alias gaa='git add .'
+alias gc='git commit'
 alias gcm='git commit -m'
+alias gca='git commit -am'
+alias gp='git push'
+alias gpl='git pull'
+alias gs='git status'
+alias gd='git diff'
+alias gb='git branch'
 alias gco='git checkout'
 alias gcb='git checkout -b'
-alias gd='git diff'
-alias gdc='git diff --cached'
-alias gl='git pull'
-alias glog='git log --oneline --decorate --graph'
-alias gloga='git log --oneline --decorate --graph --all'
-alias gp='git push'
-alias gpom='git push origin main'
-alias gr='git remote'
-alias gra='git remote add'
-alias grv='git remote -v'
-alias gs='git status'
+alias gm='git merge'
+alias gr='git rebase'
+alias gl='git log --oneline --graph'
+alias gla='git log --oneline --graph --all'
 alias gst='git stash'
-alias gsta='git stash apply'
-alias gstd='git stash drop'
-alias gstl='git stash list'
-alias gstp='git stash pop'
-alias gsts='git stash save'
+alias gsp='git stash pop'
 
-# Docker
+# Enhanced git with lazygit
+if command -v lazygit &> /dev/null; then
+    alias lg='lazygit'
+fi
+
+# Docker aliases
 alias d='docker'
 alias dc='docker-compose'
 alias dps='docker ps'
-alias dpa='docker ps -a'
+alias dpsa='docker ps -a'
 alias di='docker images'
-alias drm='docker rm'
 alias drmi='docker rmi'
-alias dex='docker exec -it'
-alias dlog='docker logs'
-alias dlogf='docker logs -f'
+alias drm='docker rm'
+alias dexec='docker exec -it'
+alias dlogs='docker logs'
+alias dstop='docker stop'
+alias dstart='docker start'
 
-# Node.js & npm
-alias n='npm'
-alias ni='npm install'
-alias nis='npm install --save'
-alias nid='npm install --save-dev'
-alias nig='npm install --global'
-alias nr='npm run'
-alias ns='npm start'
-alias nt='npm test'
-alias nf='npm run format'
-alias nl='npm run lint'
-alias nb='npm run build'
-alias nw='npm run watch'
-alias nc='npm run clean'
-alias npx='npx --yes'
+# Enhanced docker with lazydocker
+if command -v lazydocker &> /dev/null; then
+    alias ld='lazydocker'
+fi
 
-# Yarn
-alias y='yarn'
-alias ya='yarn add'
-alias yad='yarn add --dev'
-alias yag='yarn global add'
-alias yr='yarn run'
-alias ys='yarn start'
-alias yt='yarn test'
-alias yb='yarn build'
-alias yw='yarn watch'
-alias yc='yarn clean'
-
-# Python
-alias py='python'
-alias py3='python3'
+# Development aliases
+alias v='nvim'
+alias vim='nvim'
+alias c='code'
+alias py='python3'
 alias pip='pip3'
-alias venv='python -m venv'
-alias activate='source venv/bin/activate'
-alias deactivate='deactivate'
-alias pyserver='python -m http.server'
-alias pyfmt='black .'
-alias pylint='pylint'
-alias pytest='pytest -v'
+alias serve='python3 -m http.server'
+alias json='python3 -m json.tool'
 
-# Ruby
-alias be='bundle exec'
-alias bi='bundle install'
-alias bu='bundle update'
-alias rails='bundle exec rails'
-alias rake='bundle exec rake'
-alias rspec='bundle exec rspec'
+# Network aliases
+alias ping='ping -c 5'
+alias wget='wget -c'
+alias myip='curl ifconfig.me'
+alias localip='ipconfig getifaddr en0'
+alias ports='netstat -tulanp'
 
-# ============================================================================
-# SYSTEM ADMINISTRATION
-# ============================================================================
+# System aliases
+alias h='history'
+alias j='jobs'
+alias path='echo $PATH | tr ":" "\n"'
+alias reload='source ~/.zshrc'
+alias cls='clear'
+
+# Archive aliases
+alias tgz='tar -czf'
+alias untgz='tar -xzf'
+alias tbz='tar -cjf'
+alias untbz='tar -xjf'
+
+# macOS specific aliases
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    alias flush='dscacheutil -flushcache && killall -HUP mDNSResponder'
+    alias lscleanup='/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user && killall Finder'
+    alias show='defaults write com.apple.finder AppleShowAllFiles -bool true && killall Finder'
+    alias hide='defaults write com.apple.finder AppleShowAllFiles -bool false && killall Finder'
+    alias hidedesktop='defaults write com.apple.finder CreateDesktop -bool false && killall Finder'
+    alias showdesktop='defaults write com.apple.finder CreateDesktop -bool true && killall Finder'
+    alias airport='/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport'
+    alias emptytrash='sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl; sqlite3 ~/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV* "delete from LSQuarantineEvent"'
+fi
+
+# Homebrew aliases
+alias br='brew'
+alias bri='brew install'
+alias brs='brew search'
+alias bro='brew outdated'
+alias bru='brew update && brew upgrade'
+alias brc='brew cleanup'
+
+# Mise aliases
+alias mi='mise'
+alias mii='mise install'
+alias mil='mise list'
+alias miu='mise use'
+alias mir='mise remove'
+
+# Utility aliases
+alias week='date +%V'
+alias timer='echo "Timer started. Stop with Ctrl-D." && date && time cat && date'
+alias urlencode='python3 -c "import sys, urllib.parse as ul; print(ul.quote_plus(sys.argv[1]))"'
+alias urldecode='python3 -c "import sys, urllib.parse as ul; print(ul.unquote_plus(sys.argv[1]))"'
+alias base64encode='python3 -c "import sys, base64; print(base64.b64encode(sys.argv[1].encode()).decode())"'
+alias base64decode='python3 -c "import sys, base64; print(base64.b64decode(sys.argv[1]).decode())"'
+
+# Quick file operations
+alias mk='mkdir -p'
+alias md='mkdir -p'
+alias rd='rmdir'
+alias rf='rm -rf'
 
 # Process management
 alias psg='ps aux | grep'
-alias top='htop'
-alias ports='netstat -tulanp'
-
-# System monitoring
-alias meminfo='free -m -l -t'
-alias cpuinfo='lscpu'
-alias diskusage='df -H'
-alias foldersize='du -sh'
-
-# Network
-alias ping='ping -c 5'
-alias wget='wget -c'
-alias curl='curl -L'
-alias myip='curl -s ifconfig.me'
-alias localip='ipconfig getifaddr en0'
-
-# Archive operations
-alias targz='tar -czf'
-alias untargz='tar -xzf'
-alias tarbz2='tar -cjf'
-alias untarbz2='tar -xjf'
-
-# ============================================================================
-# SEARCH AND FIND
-# ============================================================================
-
-# Better search tools
-if command -v rg >/dev/null 2>&1; then
-    alias grep='rg'
-    alias fgrep='rg -F'
-    alias egrep='rg'
-else
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep--color=auto'
-fi
-
-if command -v fd >/dev/null 2>&1; then
-    alias find='fd'
-fi
-
-# Common search patterns
-alias findname='find . -name'
-alias findtext='grep -r'
-alias findcode='grep -r --include="*.js" --include="*.ts" --include="*.py" --include="*.rb"'
-
-# ============================================================================
-# SHORTCUTS FOR COMMON OPERATIONS
-# ============================================================================
+alias killall='killall -v'
 
 # Quick edits
-alias zshrc='$EDITOR ~/.zshrc'
-alias aliases='$EDITOR ~/.config/zsh/aliases.zsh'
-alias vimrc='$EDITOR ~/.vimrc'
-alias gitconfig='$EDITOR ~/.gitconfig'
+alias zshrc='nvim ~/.zshrc'
+alias aliases='nvim ~/.dotfiles/zsh/aliases.zsh'
+alias functions='nvim ~/.dotfiles/zsh/functions.zsh'
 
-# Reload configuration
-alias reload='source ~/.zshrc'
-alias rebash='source ~/.bashrc'
-
-# Quick directory access
-alias projects='cd ~/Projects'
-alias downloads='cd ~/Downloads'
-alias documents='cd ~/Documents'
-alias desktop='cd ~/Desktop'
-
-# ============================================================================
-# UTILITY FUNCTIONS AS ALIASES
-# ============================================================================
-
-# Make and enter directory
-alias mkcd='mkdir -p "$1" && cd "$1"'
-
-# Extract any archive
-alias extract='dtrx'
-
-# Show PATH in readable format
-alias path='echo -e ${PATH//:/\\n}'
-
-# Get current weather
-alias weather='curl wttr.in'
-
-# Generate random password
-alias genpass='openssl rand -base64 32'
-
-# Show file sizes in current directory
-alias sizes='du -sh * | sort -hr'
-
-# Show top 10 largest files in current directory
-alias largest='find . -type f -exec du -h {} + | sort -hr | head -10'
-
-# Show directory tree
-if ! command -v tree >/dev/null 2>&1; then
-    alias tree='find . -print | sed -e "s;[^/]*/;|____;g;s;____|; |;g"'
-fi
-
-# ============================================================================
-# MACOS SPECIFIC
-# ============================================================================
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # Homebrew
-    alias brewup='brew update && brew upgrade && brew cleanup'
-    alias brewinfo='brew info'
-    alias brewsearch='brew search'
-    alias cask='brew install --cask'
-    
-    # macOS system
-    alias showfiles='defaults write com.apple.finder AppleShowAllFiles YES; killall Finder'
-    alias hidefiles='defaults write com.apple.finder AppleShowAllFiles NO; killall Finder'
-    alias spotlight='sudo mdutil -i on /'
-    alias spotlightoff='sudo mdutil -i off /'
-    alias flush='dscacheutil -flushcache && killall -HUP mDNSResponder'
-    
-    # Quick Look
-    alias ql='qlmanage -p'
-    
-    # Open current directory in Finder
-    alias finder='open .'
-    alias f='open .'
-    
-    # Copy current path to clipboard
-    alias pwd2clip='pwd | pbcopy'
-    
-    # Empty trash
-    alias emptytrash='sudo rm -rfv /Volumes/*/.Trashes; sudo rm -rfv ~/.Trash; sudo rm -rfv /private/var/log/asl/*.asl'
-fi
-
-# ============================================================================
-# LINUX SPECIFIC
-# ============================================================================
-
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Package management (detect distro)
-    if command -v apt >/dev/null 2>&1; then
-        alias aptup='sudo apt update && sudo apt upgrade'
-        alias aptinstall='sudo apt install'
-        alias aptsearch='apt search'
-        alias aptremove='sudo apt remove'
-        alias aptclean='sudo apt autoremove && sudo apt autoclean'
-    elif command -v yum >/dev/null 2>&1; then
-        alias yumup='sudo yum update'
-        alias yuminstall='sudo yum install'
-        alias yumsearch='yum search'
-        alias yumremove='sudo yum remove'
-    elif command -v dnf >/dev/null 2>&1; then
-        alias dnfup='sudo dnf update'
-        alias dnfinstall='sudo dnf install'
-        alias dnfsearch='dnf search'
-        alias dnfremove='sudo dnf remove'
-    fi
-    
-    # System services
-    alias services='systemctl list-units --type=service'
-    alias startservice='sudo systemctl start'
-    alias stopservice='sudo systemctl stop'
-    alias restartservice='sudo systemctl restart'
-    alias enableservice='sudo systemctl enable'
-    alias disableservice='sudo systemctl disable'
-    alias statusservice='systemctl status'
-    
-    # Copy to clipboard (if xclip is available)
-    if command -v xclip >/dev/null 2>&1; then
-        alias clip='xclip -selection clipboard'
-        alias pwd2clip='pwd | xclip -selection clipboard'
-    fi
-fi
-
-# ============================================================================
-# PRODUCTIVITY ALIASES
-# ============================================================================
-
-# Time and date
-alias now='date +"%T"'
-alias nowdate='date +"%d-%m-%Y"'
-alias week='date +%V'
-
-# URL encode/decode
-alias urlencode='python -c "import sys, urllib.parse as ul; print(ul.quote_plus(sys.argv[1]))"'
-alias urldecode='python -c "import sys, urllib.parse as ul; print(ul.unquote_plus(sys.argv[1]))"'
-
-# JSON pretty print
-alias json='python -m json.tool'
-
-# Start simple HTTP server
-alias serve='python -m http.server 8000'
-alias serve3000='python -m http.server 3000'
-
-# Generate UUID
-alias uuid='python -c "import uuid; print(uuid.uuid4())"'
-
-# Quick calculator
-alias calc='python -c "import sys; print(eval(sys.argv[1]))"'
-
-# ============================================================================
-# SAFETY ALIASES
-# ============================================================================
-
-# Prevent accidental deletions
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-
-# Always use safe directory creation
-alias mkdir='mkdir -pv'
-
-# Colorize dangerous commands
-alias chown='chown --preserve-root'
-alias chmod='chmod --preserve-root'
-alias chgrp='chgrp --preserve-root'
+# Quick navigation to common directories
+alias dl='cd ~/Downloads'
+alias dt='cd ~/Desktop'
+alias docs='cd ~/Documents'
+alias dev='cd ~/Development'
+alias proj='cd ~/Projects'
