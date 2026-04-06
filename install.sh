@@ -129,7 +129,7 @@ create_symlinks() {
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would write $HOME/.zshenv"
         log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml and mise/config.toml"
+        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, and ghostty/config"
     else
         cat > "$HOME/.zshenv" << 'ZSHENV'
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:=${HOME}/.config}
@@ -150,6 +150,10 @@ ZSHENV
         # Mise config
         mkdir -p "$HOME/.config/mise"
         ln -sf "$DOTFILES_DIR/config/mise/config.toml" "$HOME/.config/mise/config.toml"
+
+        # Ghostty config
+        mkdir -p "$HOME/.config/ghostty"
+        ln -sf "$DOTFILES_DIR/config/ghostty/config" "$HOME/.config/ghostty/config"
     fi
     
     log_success "Symlinks created"
@@ -186,6 +190,7 @@ rollback() {
     # Remove symlinks
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
     rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml"
+    rm -f "$HOME/.config/ghostty/config"
 
     # Restore backed-up files
     for file in "$latest_backup"/.*; do

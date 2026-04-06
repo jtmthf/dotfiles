@@ -1,0 +1,6 @@
+# Font configuration
+# Uses plain Fira Code + Symbols Nerd Font Mono as fallback for icons/glyphs.
+# This avoids the need for patched "Nerd Font" variants.
+font-family = Fira Code
+font-family = Symbols Nerd Font Mono
+font-size = 13
