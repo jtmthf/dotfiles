@@ -10,12 +10,12 @@ alias ~='cd ~'
 alias -- -='cd -'
 
 # Modern ls replacements
-if command -v exa &> /dev/null; then
-    alias ls='exa --group-directories-first'
-    alias la='exa -la --group-directories-first'
-    alias ll='exa -l --group-directories-first'
-    alias lt='exa --tree --level=2'
-    alias lta='exa --tree --level=2 -a'
+if command -v eza &> /dev/null; then
+    alias ls='eza --group-directories-first'
+    alias la='eza -la --group-directories-first'
+    alias ll='eza -l --group-directories-first'
+    alias lt='eza --tree --level=2'
+    alias lta='eza --tree --level=2 -a'
 else
     alias ls='ls --color=auto'
     alias la='ls -la'
@@ -29,7 +29,7 @@ if command -v bat &> /dev/null; then
 fi
 
 # Modern grep replacement
-if command -v ripgrep &> /dev/null; then
+if command -v rg &> /dev/null; then
     alias grep='rg'
 fi
 
@@ -54,7 +54,7 @@ if command -v procs &> /dev/null; then
 fi
 
 # Modern top replacement
-if command -v bottom &> /dev/null; then
+if command -v btm &> /dev/null; then
     alias top='btm'
 fi
 
@@ -122,7 +122,7 @@ alias ports='netstat -tulanp'
 alias h='history'
 alias j='jobs'
 alias path='echo $PATH | tr ":" "\n"'
-alias reload='source ~/.zshrc'
+alias reload='exec zsh'
 alias cls='clear'
 
 # Archive aliases
@@ -177,9 +177,9 @@ alias psg='ps aux | grep'
 alias killall='killall -v'
 
 # Quick edits
-alias zshrc='nvim ~/.zshrc'
-alias aliases='nvim ~/.dotfiles/zsh/aliases.zsh'
-alias functions='nvim ~/.dotfiles/zsh/functions.zsh'
+alias zshrc='nvim $ZDOTDIR/.zshrc'
+alias aliases='nvim $DOTFILES/zsh/aliases.zsh'
+alias functions='nvim $DOTFILES/zsh/functions.zsh'
 
 # Quick navigation to common directories
 alias dl='cd ~/Downloads'

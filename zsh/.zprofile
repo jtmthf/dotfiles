@@ -13,16 +13,15 @@ if [[ -z "$HOMEBREW_PREFIX" ]]; then
     fi
 fi
 
-# Mise initialization (for login shells)
-if command -v mise &> /dev/null && [[ -z "$MISE_SHELL" ]]; then
-    eval "$(mise activate zsh)"
+# Mise initialization (shims for non-interactive sessions)
+if command -v mise &> /dev/null; then
+    eval "$(mise activate zsh --shims)"
 fi
 
 # macOS specific login setup
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # Add macOS-specific PATH elements
     path=(
-        "/Applications/Docker.app/Contents/Resources/bin"
         "/System/Cryptexes/App/usr/bin"
         $path
     )
@@ -45,24 +44,13 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     
     # WSL specific setup
     if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
-        # WSL-specific configurations
-        export BROWSER="wslview"
-        
         # Fix for WSL display
         export DISPLAY="${DISPLAY:-:0}"
-        
-        # Windows PATH integration (optional)
-        # export WSLPATH="$(wslpath -w /)"
     fi
 fi
 
 # Development tools initialization (login only)
 # These are expensive operations that should only run once
-
-# Docker Desktop integration (macOS)
-if [[ "$OSTYPE" == "darwin"* ]] && [[ -d "/Applications/Docker.app" ]]; then
-    path=("/Applications/Docker.app/Contents/Resources/bin" $path)
-fi
 
 # JAVA_HOME setup (if java is installed via mise)
 if command -v mise &> /dev/null; then
@@ -81,15 +69,7 @@ if [[ -d "$HOME/.cargo" ]]; then
     path=("$HOME/.cargo/bin" $path)
 fi
 
-# Python user base binary directory
-if command -v python3 &> /dev/null; then
-    path=("$(python3 -m site --user-base)/bin" $path)
-fi
-
-# Ruby gems (if using system ruby)
-if command -v ruby &> /dev/null && command -v gem &> /dev/null; then
-    path=("$(ruby -r rubygems -e 'puts Gem.user_dir')/bin" $path)
-fi
+# Python/Ruby PATHs are managed by mise activate
 
 # Clean up PATH again after all additions
 path=($^path(N-/))

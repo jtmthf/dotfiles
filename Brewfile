@@ -30,6 +30,7 @@ brew "hyperfine"      # Benchmarking
 brew "tokei"         # Code statistics
 brew "tealdeer"      # Better man pages
 brew "broot"         # Better tree
+brew "eza"           # Better ls (exa successor)
 brew "sd"            # Better sed
 brew "choose"        # Better cut/awk
 brew "jq"            # JSON processor
@@ -82,7 +83,6 @@ if OS.mac?
   # Development
   cask "postman"
   cask "tableplus"
-  cask "docker"
 end
 
 # Linux specific (including WSL)

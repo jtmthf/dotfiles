@@ -104,6 +104,11 @@ if [[ -d "$PLUGINS_DIR/zsh-completions" ]]; then
     fpath=("$PLUGINS_DIR/zsh-completions/src" $fpath)
 fi
 
+# Mise activation (interactive sessions — full hooks for directory changes)
+if command -v mise &> /dev/null; then
+    eval "$(mise activate zsh)"
+fi
+
 # Initialize modern tools (lazy loading where possible)
 # Starship prompt (fast, so load immediately)
 if command -v starship &> /dev/null; then
@@ -125,7 +130,7 @@ if command -v fzf &> /dev/null; then
     export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
     export FZF_ALT_C_COMMAND="fd --type d --strip-cwd-prefix --hidden --follow --exclude .git"
     export FZF_CTRL_T_OPTS="--preview 'bat --color=always --line-range :50 {}'"
-    export FZF_ALT_C_OPTS="--preview 'exa --tree --color=always {} | head -50'"
+    export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -50'"
 fi
 
 # Zoxide (better cd)
