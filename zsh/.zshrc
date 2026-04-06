@@ -223,3 +223,6 @@ fi
 
 # Performance profiling output (uncomment to debug)
 # zprof
+
+# Load local machine customizations (not version controlled)
+[[ -f "${ZDOTDIR:-$HOME}/.zshrc.local" ]] && source "${ZDOTDIR:-$HOME}/.zshrc.local"

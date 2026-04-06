@@ -11,11 +11,11 @@ source "${0:A:h}/../lib/logging.sh"
 setup_postgresql() {
     log_info "Setting up PostgreSQL..."
     
-    if brew services list | grep -q "postgresql@14.*started"; then
+    if brew services list | grep -q "postgresql@17.*started"; then
         log_info "PostgreSQL is already running"
     else
         log_info "Starting PostgreSQL service..."
-        brew services start postgresql@14
+        brew services start postgresql@17
         
         # Wait for PostgreSQL to start
         sleep 3
@@ -79,7 +79,7 @@ main() {
     echo ""
     log_success "All services setup complete!"
     log_info "Services can be managed with:"
-    echo "  brew services start/stop/restart postgresql@14"
+    echo "  brew services start/stop/restart postgresql@17"
     echo "  brew services start/stop/restart redis"
 }
 

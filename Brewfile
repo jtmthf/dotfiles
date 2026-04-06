@@ -54,7 +54,7 @@ brew "docker"
 brew "docker-compose"
 
 # Database tools
-brew "postgresql@14", restart_service: true
+brew "postgresql@17", restart_service: true
 brew "redis", restart_service: true
 
 # Network tools
