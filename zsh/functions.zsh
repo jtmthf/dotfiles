@@ -40,7 +40,16 @@ findreplace() {
         return 1
     fi
     
-    find . -name "$3" -type f -exec sed -i '' "s/$1/$2/g" {} +
+    find . -name "$3" -type f -exec sd "$1" "$2" {} +
+}
+
+# Get local IP address (cross-platform)
+localip() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        ipconfig getifaddr "$(route -n get default 2>/dev/null | awk '/interface:/ {print $2}')"
+    else
+        hostname -I | awk '{print $1}'
+    fi
 }
 
 # Quick file backup

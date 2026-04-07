@@ -28,34 +28,9 @@ if command -v bat &> /dev/null; then
     alias catp='bat --plain'
 fi
 
-# Modern grep replacement
-if command -v rg &> /dev/null; then
-    alias grep='rg'
-fi
-
-# Modern find replacement
-if command -v fd &> /dev/null; then
-    alias find='fd'
-fi
-
-# Modern du replacement
-if command -v dust &> /dev/null; then
-    alias du='dust'
-fi
-
-# Modern df replacement
+# Modern df replacement (output is a superset, safe to shadow)
 if command -v duf &> /dev/null; then
     alias df='duf'
-fi
-
-# Modern ps replacement
-if command -v procs &> /dev/null; then
-    alias ps='procs'
-fi
-
-# Modern top replacement
-if command -v btm &> /dev/null; then
-    alias top='btm'
 fi
 
 # Git aliases
@@ -115,7 +90,6 @@ alias json='python3 -m json.tool'
 alias ping='ping -c 5'
 alias wget='wget -c'
 alias myip='curl ifconfig.me'
-alias localip='ipconfig getifaddr en0'
 alias ports='netstat -tulanp'
 
 # System aliases
