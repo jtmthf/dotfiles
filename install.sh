@@ -249,8 +249,7 @@ rollback() {
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
     rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml"
     rm -f "$HOME/.config/ghostty/config"
-    rm -f "$HOME/.claude/settings.json"
-    rm -f "$HOME/.claude/CLAUDE.md"
+    rm -f "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md"
     rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
     rm -f "$HOME/.config/git/config"
 
@@ -266,6 +265,7 @@ rollback() {
     # Restore SSH and git configs if they were backed up
     [[ -f "$latest_backup/ssh_config" ]] && { log_info "Restoring .ssh/config"; cp "$latest_backup/ssh_config" "$HOME/.ssh/config"; }
     [[ -f "$latest_backup/git_config" ]] && { log_info "Restoring .config/git/config"; cp "$latest_backup/git_config" "$HOME/.config/git/config"; }
+    [[ -f "$latest_backup/claude_settings.json" || -f "$latest_backup/claude_CLAUDE.md" ]] && mkdir -p "$HOME/.claude"
     [[ -f "$latest_backup/claude_settings.json" ]] && { log_info "Restoring .claude/settings.json"; cp "$latest_backup/claude_settings.json" "$HOME/.claude/settings.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
 
