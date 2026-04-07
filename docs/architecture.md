@@ -18,6 +18,17 @@ The installer symlinks into `~/.config/` via a bootstrap `~/.zshenv` that sets `
 - `config/starship.toml` → `~/.config/starship.toml`
 - `config/mise/config.toml` → `~/.config/mise/config.toml`
 - `config/ghostty/config` → `~/.config/ghostty/config`
+- `config/ssh/config` → `~/.ssh/config`
+- `config/git/config` → `~/.config/git/config`
+- `config/git/ignore` → `~/.config/git/ignore`
+- `config/claude/settings.json` → `~/.claude/settings.json`
+- `config/claude/CLAUDE.md` → `~/.claude/CLAUDE.md`
+
+Two files are written (not symlinked) at install time:
+- `~/.ssh/config.local` — platform-specific `IdentityAgent` path for 1Password SSH agent
+- `~/.config/git/config.local` — local git identity overrides (`user.name`, `user.email`, `user.signingKey`); created empty if absent
+
+Note: `~/.claude/` is a non-XDG exception (like `~/.ssh/`); Claude Code does not follow the `~/.config/` convention.
 
 ## Shared utilities
 
