@@ -117,6 +117,44 @@ setup_zsh_plugins() {
     log_success "Zsh plugins setup complete"
 }
 
+# Setup Claude Code config
+setup_claude() {
+    log_info "Setting up Claude Code config..."
+
+    local claude_dir="$HOME/.claude"
+    $DRY_RUN || mkdir -p "$claude_dir"
+
+    # Link a single Claude config file with idempotency and backup.
+    # Args: <dotfiles-source-path> <target-path> <backup-filename>
+    link_claude_file() {
+        local src="$1"
+        local dst="$2"
+        local backup_name="$3"
+
+        if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
+            log_info "Already linked: $dst"
+            return
+        fi
+
+        if [[ "$DRY_RUN" == true ]]; then
+            log_info "[DRY RUN] Would link $dst -> $src"
+            return
+        fi
+
+        if [[ -f "$dst" || -L "$dst" ]]; then
+            log_info "Backing up existing $(basename "$dst")"
+            mv "$dst" "$BACKUP_DIR/$backup_name"
+        fi
+
+        ln -sf "$src" "$dst"
+    }
+
+    link_claude_file "$DOTFILES_DIR/config/claude/settings.json" "$claude_dir/settings.json" "claude_settings.json"
+    link_claude_file "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
+
+    log_success "Claude Code config setup complete"
+}
+
 # Create symlinks
 create_symlinks() {
     log_info "Creating symlinks..."
@@ -129,7 +167,8 @@ create_symlinks() {
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would write $HOME/.zshenv"
         log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, and ghostty/config"
+        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, ghostty/config, ssh/config, and git/config"
+        log_info "[DRY RUN] Would write $HOME/.ssh/config.local with platform IdentityAgent"
     else
         cat > "$HOME/.zshenv" << 'ZSHENV'
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:=${HOME}/.config}
@@ -154,6 +193,30 @@ ZSHENV
         # Ghostty config
         mkdir -p "$HOME/.config/ghostty"
         ln -sf "$DOTFILES_DIR/config/ghostty/config" "$HOME/.config/ghostty/config"
+
+        # SSH config
+        mkdir -p "$HOME/.ssh" "$HOME/.ssh/control"
+        chmod 700 "$HOME/.ssh" "$HOME/.ssh/control"
+        [[ -f "$HOME/.ssh/config" && ! -L "$HOME/.ssh/config" ]] && run mv "$HOME/.ssh/config" "$BACKUP_DIR/ssh_config"
+        ln -sf "$DOTFILES_DIR/config/ssh/config" "$HOME/.ssh/config"
+
+        # Write platform-specific SSH config.local (avoids exec uname per connection)
+        if [[ "$OS" == "macos" ]]; then
+            printf 'Host *\n  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"\n' > "$HOME/.ssh/config.local"
+        else
+            printf 'Host *\n  IdentityAgent "~/.1password/agent.sock"\n' > "$HOME/.ssh/config.local"
+        fi
+
+        # Ensure allowed_signers file exists for git commit verification
+        touch "$HOME/.ssh/allowed_signers"
+
+        # Git config
+        mkdir -p "$HOME/.config/git"
+        [[ -f "$HOME/.config/git/config" && ! -L "$HOME/.config/git/config" ]] && run mv "$HOME/.config/git/config" "$BACKUP_DIR/git_config"
+        ln -sf "$DOTFILES_DIR/config/git/config" "$HOME/.config/git/config"
+        ln -sf "$DOTFILES_DIR/config/git/ignore" "$HOME/.config/git/ignore"
+        # Ensure local overrides file exists (user.name, user.email, user.signingKey)
+        [[ -f "$HOME/.config/git/config.local" ]] || touch "$HOME/.config/git/config.local"
     fi
     
     log_success "Symlinks created"
@@ -191,6 +254,8 @@ rollback() {
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
     rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml"
     rm -f "$HOME/.config/ghostty/config"
+    rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
+    rm -f "$HOME/.config/git/config"
 
     # Restore backed-up files
     for file in "$latest_backup"/.*; do
@@ -200,6 +265,10 @@ rollback() {
         log_info "Restoring $basename"
         cp "$file" "$HOME/$basename"
     done
+
+    # Restore SSH and git configs if they were backed up
+    [[ -f "$latest_backup/ssh_config" ]] && { log_info "Restoring .ssh/config"; cp "$latest_backup/ssh_config" "$HOME/.ssh/config"; }
+    [[ -f "$latest_backup/git_config" ]] && { log_info "Restoring .config/git/config"; cp "$latest_backup/git_config" "$HOME/.config/git/config"; }
 
     log_success "Rollback complete from $latest_backup"
     log_info "Please restart your terminal"
@@ -213,7 +282,8 @@ main() {
     install_packages
     setup_zsh_plugins
     create_symlinks
-    
+    setup_claude
+
     if [[ "$OS" == "macos" ]]; then
         setup_services
         setup_colima
@@ -222,6 +292,7 @@ main() {
     log_success "Dotfiles installation complete!"
     log_info "Please restart your terminal or run: source ~/.zshrc"
     log_info "Backup files are in: $BACKUP_DIR"
+    log_warning "Action required: set user.name, user.email, and user.signingKey in ~/.config/git/config.local before making commits (gpgSign is enabled by default)"
 }
 
 # Run rollback or main
