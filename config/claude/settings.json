@@ -1,0 +1,49 @@
+{
+  "enabledPlugins": {
+    "skill-creator@claude-plugins-official": true,
+    "start@the-startup": true,
+    "team@the-startup": true,
+    "context7@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "serena@claude-plugins-official": true,
+    "voice-writer@jtmthf-skills": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "data-modeler@jtmthf-skills": true,
+    "test-writer@jtmthf-skills": true,
+    "tanstack-core@tanstack-skills": true,
+    "tanstack-data@tanstack-skills": true,
+    "tanstack-form@tanstack-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    },
+    "the-startup": {
+      "source": {
+        "source": "github",
+        "repo": "rsmdt/the-startup"
+      }
+    },
+    "jtmthf-skills": {
+      "source": {
+        "source": "github",
+        "repo": "jtmthf/skills"
+      }
+    },
+    "tanstack-skills": {
+      "source": {
+        "source": "github",
+        "repo": "tanstack-skills/tanstack-skills"
+      }
+    }
+  }
+}
