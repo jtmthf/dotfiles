@@ -61,6 +61,26 @@ backup_file() {
     fi
 }
 
+# Link a Claude Code config file with idempotency and backup.
+# Args: <dotfiles-source-path> <target-path> <backup-filename>
+link_claude_file() {
+    local src="$1"
+    local dst="$2"
+    local backup_name="$3"
+
+    if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
+        log_info "Already linked: $dst"
+        return
+    fi
+
+    if [[ -f "$dst" || -L "$dst" ]]; then
+        log_info "Backing up existing $(basename "$dst")"
+        run mv "$dst" "$BACKUP_DIR/$backup_name"
+    fi
+
+    run ln -sf "$src" "$dst"
+}
+
 # Install Homebrew
 install_homebrew() {
     if ! command -v brew &> /dev/null; then
@@ -122,32 +142,7 @@ setup_claude() {
     log_info "Setting up Claude Code config..."
 
     local claude_dir="$HOME/.claude"
-    $DRY_RUN || mkdir -p "$claude_dir"
-
-    # Link a single Claude config file with idempotency and backup.
-    # Args: <dotfiles-source-path> <target-path> <backup-filename>
-    link_claude_file() {
-        local src="$1"
-        local dst="$2"
-        local backup_name="$3"
-
-        if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
-            log_info "Already linked: $dst"
-            return
-        fi
-
-        if [[ "$DRY_RUN" == true ]]; then
-            log_info "[DRY RUN] Would link $dst -> $src"
-            return
-        fi
-
-        if [[ -f "$dst" || -L "$dst" ]]; then
-            log_info "Backing up existing $(basename "$dst")"
-            mv "$dst" "$BACKUP_DIR/$backup_name"
-        fi
-
-        ln -sf "$src" "$dst"
-    }
+    run mkdir -p "$claude_dir"
 
     link_claude_file "$DOTFILES_DIR/config/claude/settings.json" "$claude_dir/settings.json" "claude_settings.json"
     link_claude_file "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
