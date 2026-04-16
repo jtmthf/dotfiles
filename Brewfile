@@ -44,7 +44,8 @@ brew "rsync"         # File sync
 brew "git"
 brew "gh"            # GitHub CLI
 brew "git-lfs"       # Git Large File Storage
-brew "graphite"      # Stacked PRs
+tap "withgraphite/tap"
+brew "withgraphite/tap/graphite"  # Stacked PRs
 brew "curl"
 brew "wget"
 brew "httpie"
