@@ -1,0 +1,23 @@
+# Requires OpenSSH >= 7.3 (for Include directive support).
+# Note: ~/.ssh/config is installed as a symlink. Some hardened OpenSSH builds
+# (e.g. certain Linux distros with strict ControlPath checks) may reject symlinked
+# configs. If SSH ignores this config, copy it instead: cp config/ssh/config ~/.ssh/config
+
+# Include Colima SSH config if present (silently ignored if file does not exist on OpenSSH >= 7.3)
+Include ~/.config/colima/ssh_config
+
+# Platform-specific config (IdentityAgent) written by install.sh at install time
+Include ~/.ssh/config.local
+
+Host *
+  # Connection keep-alive
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+  # Reuse connections
+  ControlMaster auto
+  ControlPath ~/.ssh/control/%r@%h:%p
+  ControlPersist 10m
+
+  # Security defaults
+  AddKeysToAgent yes

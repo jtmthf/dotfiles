@@ -1,0 +1,57 @@
+# Pull in local overrides (user.name, user.email, user.signingKey)
+# Included first so signing settings below cannot be overridden
+[include]
+	path = ~/.config/git/config.local
+
+[core]
+	pager = delta
+	excludesfile = ~/.config/git/ignore
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	side-by-side = true
+	line-numbers = true
+
+[diff]
+	algorithm = histogram
+	colorMoved = default
+
+[merge]
+	conflictstyle = zdiff3
+
+[rebase]
+	autoSquash = true
+	autoStash = true
+
+[pull]
+	rebase = true
+
+[push]
+	autoSetupRemote = true
+	default = current
+
+[fetch]
+	prune = true
+	pruneTags = true
+
+[rerere]
+	enabled = true
+
+[init]
+	defaultBranch = main
+
+[commit]
+	gpgSign = true
+
+[tag]
+	gpgSign = true
+
+[gpg]
+	format = ssh
+
+[gpg "ssh"]
+	# File listing trusted public keys for verifying others' signed commits
+	allowedSignersFile = ~/.ssh/allowed_signers

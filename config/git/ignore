@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / secrets
+.env
+
+# Logs
+*.log
+
+# Misc
+*.bak

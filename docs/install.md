@@ -93,6 +93,25 @@ Then it symlinks configuration files from the repo into `~/.config/`:
 | `config/starship.toml`          | `~/.config/starship.toml`         |
 | `config/mise/config.toml`       | `~/.config/mise/config.toml`      |
 | `config/ghostty/config`         | `~/.config/ghostty/config`        |
+| `config/ssh/config`             | `~/.ssh/config`                   |
+| `config/git/config`             | `~/.config/git/config`            |
+| `config/git/ignore`             | `~/.config/git/ignore`            |
+
+Two files are **written** (not symlinked) at install time:
+
+- `~/.ssh/config.local` — `IdentityAgent` path for the 1Password SSH agent, resolved to the correct socket for the current platform.
+- `~/.config/git/config.local` — local git identity overrides; created empty if it does not already exist.
+
+After install, set your git identity in `~/.config/git/config.local` before making commits:
+
+```ini
+[user]
+    name = Your Name
+    email = you@example.com
+    signingKey = ssh-ed25519 AAAA...
+```
+
+The installer prints a warning reminding you to do this.
 
 ### 7. macOS-Only Services
 
@@ -124,8 +143,9 @@ Rollback finds the most recent `~/.dotfiles_backup_*` directory and:
 
 1. Removes all symlinks created during install (`~/.config/zsh/*`,
    `~/.config/starship.toml`, `~/.config/mise/config.toml`,
-   `~/.config/ghostty/config`).
-2. Copies every backed-up dotfile back to `$HOME`.
+   `~/.config/ghostty/config`, `~/.ssh/config`, `~/.config/git/config`).
+2. Restores `~/.ssh/config` and `~/.config/git/config` from the backup directory if they were replaced.
+3. Copies every other backed-up dotfile back to `$HOME`.
 
 After rollback, restart your terminal for changes to take effect.
 

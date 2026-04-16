@@ -9,9 +9,28 @@ A modern, fast, and comprehensive dotfiles setup optimized for macOS and Linux (
 - **Modern Unix Tools**: Replacements for traditional Unix tools with better UX
 - **Development Environment**: Mise for language version management
 - **Beautiful Prompt**: Starship for a fast, informative prompt
+- **Git**: Global config with delta diffs, SSH commit signing, and sensible defaults
+- **SSH**: Multiplexed connections, 1Password agent integration, Colima support
 - **Container Development**: Colima for lightweight Docker on macOS
 - **Database Services**: Redis and PostgreSQL setup
 - **Developer Fonts**: JetBrains Mono, Fira Code, and other Nerd Fonts
+
+## Documentation
+
+- [Architecture](docs/architecture.md) — zsh load order, symlink layout, shared utilities
+- [Install Guide](docs/install.md) — prerequisites, what the installer does, rollback
+- [Git](docs/git.md) — global git config, SSH signing, local overrides
+- [SSH](docs/ssh.md) — connection multiplexing, 1Password agent, platform config
+- [Aliases](docs/aliases.md) — shell aliases reference
+- [Functions](docs/functions.md) — custom shell functions
+- [Homebrew](docs/homebrew.md) — Brewfile and package management
+- [Plugins](docs/plugins.md) — zsh plugins
+- [Starship](docs/starship.md) — prompt configuration
+- [Mise](docs/mise.md) — language version management
+- [Ghostty](docs/ghostty.md) — terminal configuration
+- [Completions](docs/completions.md) — completion caching
+- [Services](docs/services.md) — PostgreSQL, Redis, Colima
+- [Colima](docs/colima.md) — Docker via Colima
 
 ## Quick Start
 
@@ -47,7 +66,8 @@ cd ~/.dotfiles
 
 - **Mise**: Manages Node.js, Python, Java, Ruby versions
 - **Starship**: Fast, customizable prompt
-- **Git**: Enhanced with lazygit for TUI operations
+- **Git**: delta pager, histogram diffs, SSH signing, rerere, auto-squash, sensible push/pull defaults
+- **SSH**: Connection multiplexing, keepalive, 1Password agent integration
 - **Docker**: Managed through Colima on macOS
 - **Databases**: PostgreSQL and Redis services
 
@@ -76,8 +96,15 @@ cd ~/.dotfiles
 │   └── plugins/            # Lightweight plugins
 ├── config/
 │   ├── starship.toml       # Starship prompt configuration
-│   └── mise/
-│       └── config.toml     # Mise configuration
+│   ├── ghostty/
+│   │   └── config          # Ghostty terminal configuration
+│   ├── git/
+│   │   ├── config          # Global git configuration
+│   │   └── ignore          # Global gitignore
+│   ├── mise/
+│   │   └── config.toml     # Mise configuration
+│   └── ssh/
+│       └── config          # SSH configuration
 └── scripts/
     ├── setup-services.sh   # Redis/Postgres setup
     └── setup-colima.sh     # Colima container setup
