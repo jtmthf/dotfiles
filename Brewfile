@@ -13,12 +13,14 @@ brew "grep"
 brew "zsh"
 brew "starship"
 brew "mise"
+brew "uv"            # Python package manager
 brew "zsh-history-substring-search"
 
 # Modern Unix tools
 brew "bat"           # Better cat
 brew "fd"            # Better find
 brew "ripgrep"       # Better grep
+brew "ast-grep"      # AST-based code search and rewriting
 brew "fzf"           # Fuzzy finder
 brew "zoxide"        # Better cd
 brew "git-delta"     # Better diff
@@ -73,8 +75,8 @@ brew "docker"
 brew "docker-compose"
 
 # Database tools
-brew "postgresql@17", restart_service: true
-brew "redis", restart_service: true
+brew "postgresql@17"
+brew "redis"
 
 # AI tools
 brew "ollama"        # Local LLMs

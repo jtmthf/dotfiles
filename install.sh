@@ -162,7 +162,7 @@ create_symlinks() {
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would write $HOME/.zshenv"
         log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, ghostty/config, ssh/config, and git/config"
+        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, mise/default-npm-packages, ghostty/config, ssh/config, and git/config"
         log_info "[DRY RUN] Would write $HOME/.ssh/config.local with platform IdentityAgent"
     else
         cat > "$HOME/.zshenv" << 'ZSHENV'
@@ -184,6 +184,7 @@ ZSHENV
         # Mise config
         mkdir -p "$HOME/.config/mise"
         ln -sf "$DOTFILES_DIR/config/mise/config.toml" "$HOME/.config/mise/config.toml"
+        ln -sf "$DOTFILES_DIR/config/mise/default-npm-packages" "$HOME/.config/mise/default-npm-packages"
 
         # Ghostty config
         mkdir -p "$HOME/.config/ghostty"
@@ -217,14 +218,6 @@ ZSHENV
     log_success "Symlinks created"
 }
 
-# Setup services
-setup_services() {
-    log_info "Setting up services..."
-    if [[ -f "$DOTFILES_DIR/scripts/setup-services.zsh" ]]; then
-        run zsh "$DOTFILES_DIR/scripts/setup-services.zsh"
-    fi
-}
-
 # Setup Colima
 setup_colima() {
     log_info "Setting up Colima..."
@@ -247,7 +240,7 @@ rollback() {
 
     # Remove symlinks
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
-    rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml"
+    rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml" "$HOME/.config/mise/default-npm-packages"
     rm -f "$HOME/.config/ghostty/config"
     rm -f "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md"
     rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
@@ -284,7 +277,6 @@ main() {
     setup_claude
 
     if [[ "$OS" == "macos" ]]; then
-        setup_services
         setup_colima
     fi
     

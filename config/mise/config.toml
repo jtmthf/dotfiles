@@ -26,5 +26,7 @@ auto_install = true
 # Use legacy version files
 legacy_version_file = true
 
+node.default_packages_file = "~/.config/mise/default-npm-packages"
+
 [plugins]
 # Additional plugins can be configured here
