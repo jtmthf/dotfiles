@@ -17,3 +17,5 @@
 
 # Misc
 *.bak
+
+**/.claude/settings.local.json

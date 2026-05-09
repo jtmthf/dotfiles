@@ -6,13 +6,14 @@
 node = "lts"
 
 # Python
-python = "3.11"
+python = "3.14"
 
 # Java
-java = "openjdk-17"
+java = "openjdk-25"
 
 # Ruby
 ruby = "3.2"
+pnpm = "latest"
 
 [env]
 # Global environment variables
@@ -23,10 +24,10 @@ PAGER = "bat"
 # Auto-install tools
 auto_install = true
 
-# Use legacy version files
-legacy_version_file = true
+idiomatic_version_file_enable_tools = ["node", "python", "java", "ruby"]
 
 node.default_packages_file = "~/.config/mise/default-npm-packages"
+python.default_packages_file = "~/.config/mise/default-python-packages"
 
 [plugins]
 # Additional plugins can be configured here

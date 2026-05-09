@@ -1,12 +1,14 @@
 # SSH
 
-SSH configuration lives at `config/ssh/config` and is symlinked to `~/.ssh/config` by the installer.
+SSH configuration lives at `config/ssh/config` and is included by `~/.ssh/config`, which the installer generates as a real file (not a symlink).
 
 Requires OpenSSH >= 7.3 for `Include` directive support.
 
 ## Config structure
 
-The config is split into three layers using `Include`:
+`~/.ssh/config` is a generated file written by the installer containing a single `Include` line pointing to the dotfiles config. This means tools like 1Password can append host entries to `~/.ssh/config` without touching source-controlled files.
+
+The dotfiles config itself is split into three layers using `Include`:
 
 1. **`~/.config/colima/ssh_config`** — Colima-managed VM entries, included if present (silently ignored otherwise).
 2. **`~/.ssh/config.local`** — platform-specific settings written by the installer at install time (see below).
@@ -36,10 +38,9 @@ The installer writes `~/.ssh/config.local` with the correct `IdentityAgent` path
 
 This file is written at install time so SSH does not need to exec `uname` on every connection.
 
-## Symlinked config caveat
+## Reinstalling
 
-`~/.ssh/config` is a symlink. Some hardened OpenSSH builds (certain Linux distros with strict `ControlPath` checks) may reject symlinked configs. If SSH silently ignores the config, copy it instead:
+The installer is idempotent for `~/.ssh/config`. On reinstall it checks whether the `Include` directive is already present:
 
-```bash
-cp config/ssh/config ~/.ssh/config
-```
+- If yes — the file is left untouched, preserving any entries added by tools like 1Password.
+- If no — the `Include` is prepended to the existing content.

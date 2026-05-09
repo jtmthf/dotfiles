@@ -79,8 +79,11 @@ brew "postgresql@17"
 brew "redis"
 
 # AI tools
+tap "yoanbernabeu/tap"
+brew "yoanbernabeu/tap/grepai"  # Semantic code search (vector embeddings via Ollama)
 brew "ollama"        # Local LLMs
 brew "opencode"      # AI coding CLI
+brew "claude-squad"  # Multi-agent Claude Code TUI (cs binary)
 
 # Network tools
 brew "nmap"

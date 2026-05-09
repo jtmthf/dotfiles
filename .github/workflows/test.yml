@@ -1,0 +1,16 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run fast install test
+        run: bash scripts/test-docker.sh
+        env:
+          DOTFILES_TEST_MODE: fast

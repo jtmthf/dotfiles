@@ -1,4 +1,31 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(tmux list-sessions:*)",
+      "Bash(tmux list-windows:*)",
+      "Bash(tmux list-panes:*)",
+      "Bash(tmux display-message:*)",
+      "Bash(tmux capture-pane:*)",
+      "Bash(tmux show-options:*)",
+      "Bash(tmux show-environment:*)",
+      "Bash(tmux has-session:*)",
+      "Bash(tmux send-keys:*)",
+      "Bash(tmux select-pane:*)",
+      "Bash(tmux split-window:*)",
+      "Bash(tmux new-window:*)",
+      "Bash(tmux rename-window:*)"
+    ],
+    "deny": [
+      "Bash(tmux kill-server:*)",
+      "Bash(tmux kill-session:*)",
+      "Bash(tmux kill-window:*)",
+      "Bash(tmux kill-pane:*)",
+      "Bash(tmux source-file:*)"
+    ]
+  },
   "enabledPlugins": {
     "skill-creator@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
@@ -29,8 +56,16 @@
         "source": "github",
         "repo": "ast-grep/agent-skill"
       }
+    },
+    "hooksmith": {
+      "source": {
+        "source": "github",
+        "repo": "jtmthf/hooksmith"
+      }
     }
   },
+  "effortLevel": "medium",
+  "teammateMode": "tmux",
   "mcpServers": {
     "ast-grep": {
       "command": "uvx",

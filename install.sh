@@ -105,6 +105,10 @@ install_homebrew() {
 
 # Install packages from Brewfile
 install_packages() {
+    if [[ -n "${SKIP_BREW_BUNDLE:-}" ]]; then
+        log_info "Skipping brew bundle (SKIP_BREW_BUNDLE is set)"
+        return
+    fi
     log_info "Installing packages from Brewfile..."
     if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
         run brew bundle --file="$DOTFILES_DIR/Brewfile"
@@ -137,6 +141,24 @@ setup_zsh_plugins() {
     log_success "Zsh plugins setup complete"
 }
 
+# Setup tmux config + TPM (tmux plugin manager)
+setup_tmux() {
+    log_info "Setting up tmux config..."
+
+    local tmux_dir="$HOME/.config/tmux"
+    run mkdir -p "$tmux_dir/plugins"
+
+    run ln -sf "$DOTFILES_DIR/config/tmux/tmux.conf" "$tmux_dir/tmux.conf"
+
+    # Bootstrap TPM. Plugins themselves install on first `prefix + I`.
+    if [[ ! -d "$tmux_dir/plugins/tpm" ]]; then
+        run git clone --depth=1 https://github.com/tmux-plugins/tpm "$tmux_dir/plugins/tpm"
+        log_info "TPM installed. Open tmux, then press prefix + I to install plugins"
+    fi
+
+    log_success "tmux config setup complete"
+}
+
 # Setup Claude Code config
 setup_claude() {
     log_info "Setting up Claude Code config..."
@@ -146,6 +168,7 @@ setup_claude() {
 
     link_claude_file "$DOTFILES_DIR/config/claude/settings.json" "$claude_dir/settings.json" "claude_settings.json"
     link_claude_file "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
+    link_claude_file "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
 
     log_success "Claude Code config setup complete"
 }
@@ -162,7 +185,7 @@ create_symlinks() {
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would write $HOME/.zshenv"
         log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, mise/default-npm-packages, ghostty/config, ssh/config, and git/config"
+        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, mise/default-npm-packages, mise/default-python-packages, ghostty/config, and git/config; prepend Include to ~/.ssh/config"
         log_info "[DRY RUN] Would write $HOME/.ssh/config.local with platform IdentityAgent"
     else
         cat > "$HOME/.zshenv" << 'ZSHENV'
@@ -185,16 +208,32 @@ ZSHENV
         mkdir -p "$HOME/.config/mise"
         ln -sf "$DOTFILES_DIR/config/mise/config.toml" "$HOME/.config/mise/config.toml"
         ln -sf "$DOTFILES_DIR/config/mise/default-npm-packages" "$HOME/.config/mise/default-npm-packages"
+        ln -sf "$DOTFILES_DIR/config/mise/default-python-packages" "$HOME/.config/mise/default-python-packages"
 
         # Ghostty config
         mkdir -p "$HOME/.config/ghostty"
         ln -sf "$DOTFILES_DIR/config/ghostty/config" "$HOME/.config/ghostty/config"
 
-        # SSH config
+        # SSH config — written as a real file (not a symlink) so tools like
+        # 1Password can append host entries without touching source-controlled files.
         mkdir -p "$HOME/.ssh" "$HOME/.ssh/control"
         chmod 700 "$HOME/.ssh" "$HOME/.ssh/control"
-        [[ -f "$HOME/.ssh/config" && ! -L "$HOME/.ssh/config" ]] && run mv "$HOME/.ssh/config" "$BACKUP_DIR/ssh_config"
-        ln -sf "$DOTFILES_DIR/config/ssh/config" "$HOME/.ssh/config"
+        local ssh_include="Include $DOTFILES_DIR/config/ssh/config"
+        if [[ -L "$HOME/.ssh/config" ]]; then
+            rm -f "$HOME/.ssh/config"
+        fi
+        if [[ ! -f "$HOME/.ssh/config" ]]; then
+            printf '%s\n' "$ssh_include" > "$HOME/.ssh/config"
+            chmod 600 "$HOME/.ssh/config"
+        elif ! grep -qF "$ssh_include" "$HOME/.ssh/config"; then
+            # Real file exists (e.g. has 1Password entries) — prepend Include, preserve content
+            local tmp
+            tmp=$(mktemp)
+            { printf '%s\n' "$ssh_include"; cat "$HOME/.ssh/config"; } > "$tmp"
+            mv "$tmp" "$HOME/.ssh/config"
+            chmod 600 "$HOME/.ssh/config"
+        fi
+        # If Include is already present, leave the file untouched (idempotent)
 
         # Write platform-specific SSH config.local (avoids exec uname per connection)
         if [[ "$OS" == "macos" ]]; then
@@ -216,6 +255,17 @@ ZSHENV
     fi
     
     log_success "Symlinks created"
+}
+
+# Setup crawl4ai (downloads Playwright browsers)
+setup_crawl4ai() {
+    log_info "Setting up crawl4ai..."
+    if command -v crawl4ai-setup &>/dev/null; then
+        run crawl4ai-setup
+        log_success "crawl4ai setup complete"
+    else
+        log_warning "crawl4ai-setup not found — run 'pip install crawl4ai && crawl4ai-setup' manually"
+    fi
 }
 
 # Setup Colima
@@ -240,9 +290,11 @@ rollback() {
 
     # Remove symlinks
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
-    rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml" "$HOME/.config/mise/default-npm-packages"
+    rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml" "$HOME/.config/mise/default-npm-packages" "$HOME/.config/mise/default-python-packages"
     rm -f "$HOME/.config/ghostty/config"
-    rm -f "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md"
+    rm -f "$HOME/.config/tmux/tmux.conf"
+    rm -rf "$HOME/.config/tmux/plugins/tpm"
+    rm -f "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md"
     rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
     rm -f "$HOME/.config/git/config"
 
@@ -258,9 +310,10 @@ rollback() {
     # Restore SSH and git configs if they were backed up
     [[ -f "$latest_backup/ssh_config" ]] && { log_info "Restoring .ssh/config"; cp "$latest_backup/ssh_config" "$HOME/.ssh/config"; }
     [[ -f "$latest_backup/git_config" ]] && { log_info "Restoring .config/git/config"; cp "$latest_backup/git_config" "$HOME/.config/git/config"; }
-    [[ -f "$latest_backup/claude_settings.json" || -f "$latest_backup/claude_CLAUDE.md" ]] && mkdir -p "$HOME/.claude"
+    [[ -f "$latest_backup/claude_settings.json" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" ]] && mkdir -p "$HOME/.claude"
     [[ -f "$latest_backup/claude_settings.json" ]] && { log_info "Restoring .claude/settings.json"; cp "$latest_backup/claude_settings.json" "$HOME/.claude/settings.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
+    [[ -f "$latest_backup/claude_TMUX.md" ]] && { log_info "Restoring .claude/TMUX.md"; cp "$latest_backup/claude_TMUX.md" "$HOME/.claude/TMUX.md"; }
 
     log_success "Rollback complete from $latest_backup"
     log_info "Please restart your terminal"
@@ -274,7 +327,9 @@ main() {
     install_packages
     setup_zsh_plugins
     create_symlinks
+    setup_tmux
     setup_claude
+    setup_crawl4ai
 
     if [[ "$OS" == "macos" ]]; then
         setup_colima

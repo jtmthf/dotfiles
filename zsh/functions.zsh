@@ -294,6 +294,104 @@ json-pretty() {
     fi
 }
 
+# Worktree-backed tmux session: one session per branch.
+#
+#   cw <branch>     Create or attach to session for <branch> at $CW_ROOT/<repo>/<branch>
+#   cw -l           List existing worktrees
+#   cw -r <branch>  Remove worktree and kill its tmux session
+#
+# Session starts with one pane titled `claude` running Claude Code. Split and
+# title the rest yourself per project (`prefix + |`/`-`, `prefix + T`, or
+# `prefix + S` for a 3-pane convenience layout).
+cw() {
+    local cw_root="${CW_ROOT:-$HOME/Worktrees}"
+    local action="create"
+    local branch=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -l|--list)   action="list"; shift ;;
+            -r|--remove) action="remove"; shift; branch="${1:-}"; [[ -n "$branch" ]] && shift ;;
+            -h|--help)   action="help"; shift ;;
+            -*)          echo "cw: unknown flag: $1" >&2; return 64 ;;
+            *)           branch="$1"; shift ;;
+        esac
+    done
+
+    if [[ "$action" == "help" ]]; then
+        cat <<'EOF'
+cw — worktree + tmux session per branch
+
+  cw <branch>      Create or attach to session for <branch>
+  cw -l            List existing worktrees under $CW_ROOT
+  cw -r <branch>   Remove worktree and kill its tmux session
+
+Environment:
+  CW_ROOT          Worktree root (default: ~/Worktrees)
+EOF
+        return 0
+    fi
+
+    if [[ "$action" == "list" ]]; then
+        if [[ ! -d "$cw_root" ]]; then
+            echo "no worktrees ($cw_root does not exist)"
+            return 0
+        fi
+        find "$cw_root" -mindepth 2 -maxdepth 2 -type d | sed "s|^$cw_root/||"
+        return 0
+    fi
+
+    git rev-parse --show-toplevel &>/dev/null || {
+        echo "cw: not inside a git repository" >&2
+        return 1
+    }
+    local main_root repo_name
+    main_root="$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')"
+    repo_name="$(basename "$main_root")"
+
+    if [[ -z "$branch" ]]; then
+        echo "cw: branch name required" >&2
+        return 64
+    fi
+
+    local wt_path="$cw_root/$repo_name/$branch"
+    local session_name="${repo_name}-${branch//\//-}"
+
+    if [[ "$action" == "remove" ]]; then
+        if tmux has-session -t "$session_name" 2>/dev/null; then
+            tmux kill-session -t "$session_name"
+        fi
+        if [[ -d "$wt_path" ]]; then
+            (cd "$main_root" && git worktree remove --force "$wt_path") || return 1
+        fi
+        echo "removed: $session_name ($wt_path)"
+        return 0
+    fi
+
+    if [[ ! -d "$wt_path" ]]; then
+        mkdir -p "$cw_root/$repo_name"
+        if git -C "$main_root" show-ref --verify --quiet "refs/heads/$branch"; then
+            git -C "$main_root" worktree add "$wt_path" "$branch" || return 1
+        else
+            git -C "$main_root" worktree add -b "$branch" "$wt_path" || return 1
+        fi
+    fi
+
+    if ! tmux has-session -t "$session_name" 2>/dev/null; then
+        tmux new-session -d -s "$session_name" -c "$wt_path" -n main
+        tmux select-pane -t "${session_name}:main.1" -T claude
+        if command -v claude >/dev/null 2>&1; then
+            tmux send-keys -t "${session_name}:main.1" 'claude' Enter
+        fi
+    fi
+
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$session_name"
+    else
+        tmux attach-session -t "$session_name"
+    fi
+}
+
 # YAML pretty print (requires yq)
 yaml-pretty() {
     if command -v yq &> /dev/null; then

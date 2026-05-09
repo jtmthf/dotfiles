@@ -19,11 +19,13 @@ The installer symlinks into `~/.config/` via a bootstrap `~/.zshenv` that sets `
 - `config/mise/config.toml` → `~/.config/mise/config.toml`
 - `config/mise/default-npm-packages` → `~/.config/mise/default-npm-packages`
 - `config/ghostty/config` → `~/.config/ghostty/config`
+- `config/tmux/tmux.conf` → `~/.config/tmux/tmux.conf`
 - `config/ssh/config` → `~/.ssh/config`
 - `config/git/config` → `~/.config/git/config`
 - `config/git/ignore` → `~/.config/git/ignore`
 - `config/claude/settings.json` → `~/.claude/settings.json`
 - `config/claude/CLAUDE.md` → `~/.claude/CLAUDE.md`
+- `config/claude/TMUX.md` → `~/.claude/TMUX.md`
 
 Two files are written (not symlinked) at install time:
 - `~/.ssh/config.local` — platform-specific `IdentityAgent` path for 1Password SSH agent
