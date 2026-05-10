@@ -84,6 +84,7 @@ brew "yoanbernabeu/tap/grepai"  # Semantic code search (vector embeddings via Ol
 brew "ollama"        # Local LLMs
 brew "opencode"      # AI coding CLI
 brew "claude-squad"  # Multi-agent Claude Code TUI (cs binary)
+brew "rtk"           # CLI proxy that compresses LLM tool output (60-90% token reduction)
 
 # Network tools
 brew "nmap"
