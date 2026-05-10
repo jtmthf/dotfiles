@@ -1,0 +1,41 @@
+{
+  "icon_theme": "Catppuccin Macchiato",
+  "theme": "One Dark",
+  "base_keymap": "VSCode",
+  "buffer_font_family": "Fira Code",
+  "buffer_font_fallbacks": ["Menlo", "Monaco", "Courier New", "monospace"],
+  "buffer_font_size": 15,
+  "ui_font_size": 16,
+  "tab_size": 2,
+  "minimap": {
+    "show": "never"
+  },
+  "wrap_guides": [80],
+  "terminal": {
+    "max_scroll_history_lines": 5000
+  },
+  "project_panel": {
+    "dock": "right"
+  },
+  "outline_panel": {
+    "dock": "right"
+  },
+  "collaboration_panel": {
+    "dock": "right"
+  },
+  "git_panel": {
+    "dock": "right",
+    "tree_view": true
+  },
+  "agent": {
+    "dock": "left"
+  },
+  "agent_servers": {
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "file_types": {
+    "tailwindcss": ["*.css"]
+  }
+}

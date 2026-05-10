@@ -169,6 +169,8 @@ setup_claude() {
     link_claude_file "$DOTFILES_DIR/config/claude/settings.json" "$claude_dir/settings.json" "claude_settings.json"
     link_claude_file "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
     link_claude_file "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
+    link_claude_file "$DOTFILES_DIR/config/claude/SEARCH.md" "$claude_dir/SEARCH.md" "claude_SEARCH.md"
+    link_claude_file "$DOTFILES_DIR/config/claude/WEB.md" "$claude_dir/WEB.md" "claude_WEB.md"
 
     log_success "Claude Code config setup complete"
 }
@@ -257,6 +259,28 @@ ZSHENV
     log_success "Symlinks created"
 }
 
+# Setup Zed config
+setup_zed() {
+    log_info "Setting up Zed config..."
+    run mkdir -p "$HOME/.config/zed"
+    if [[ -f "$HOME/.config/zed/settings.json" && ! -L "$HOME/.config/zed/settings.json" ]]; then
+        run mv "$HOME/.config/zed/settings.json" "$BACKUP_DIR/zed_settings.json"
+    fi
+    run ln -sf "$DOTFILES_DIR/config/zed/settings.json" "$HOME/.config/zed/settings.json"
+    log_success "Zed config setup complete"
+}
+
+# Setup gh (GitHub CLI) config
+setup_gh() {
+    log_info "Setting up gh config..."
+    run mkdir -p "$HOME/.config/gh"
+    if [[ -f "$HOME/.config/gh/config.yml" && ! -L "$HOME/.config/gh/config.yml" ]]; then
+        run mv "$HOME/.config/gh/config.yml" "$BACKUP_DIR/gh_config.yml"
+    fi
+    run ln -sf "$DOTFILES_DIR/config/gh/config.yml" "$HOME/.config/gh/config.yml"
+    log_success "gh config setup complete"
+}
+
 # Setup crawl4ai (downloads Playwright browsers)
 setup_crawl4ai() {
     log_info "Setting up crawl4ai..."
@@ -294,7 +318,9 @@ rollback() {
     rm -f "$HOME/.config/ghostty/config"
     rm -f "$HOME/.config/tmux/tmux.conf"
     rm -rf "$HOME/.config/tmux/plugins/tpm"
-    rm -f "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md"
+    rm -f "$HOME/.config/zed/settings.json"
+    rm -f "$HOME/.config/gh/config.yml"
+    rm -f "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md"
     rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
     rm -f "$HOME/.config/git/config"
 
@@ -310,10 +336,14 @@ rollback() {
     # Restore SSH and git configs if they were backed up
     [[ -f "$latest_backup/ssh_config" ]] && { log_info "Restoring .ssh/config"; cp "$latest_backup/ssh_config" "$HOME/.ssh/config"; }
     [[ -f "$latest_backup/git_config" ]] && { log_info "Restoring .config/git/config"; cp "$latest_backup/git_config" "$HOME/.config/git/config"; }
-    [[ -f "$latest_backup/claude_settings.json" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" ]] && mkdir -p "$HOME/.claude"
+    [[ -f "$latest_backup/zed_settings.json" ]] && { log_info "Restoring .config/zed/settings.json"; mkdir -p "$HOME/.config/zed"; cp "$latest_backup/zed_settings.json" "$HOME/.config/zed/settings.json"; }
+    [[ -f "$latest_backup/gh_config.yml" ]] && { log_info "Restoring .config/gh/config.yml"; mkdir -p "$HOME/.config/gh"; cp "$latest_backup/gh_config.yml" "$HOME/.config/gh/config.yml"; }
+    [[ -f "$latest_backup/claude_settings.json" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" ]] && mkdir -p "$HOME/.claude"
     [[ -f "$latest_backup/claude_settings.json" ]] && { log_info "Restoring .claude/settings.json"; cp "$latest_backup/claude_settings.json" "$HOME/.claude/settings.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
     [[ -f "$latest_backup/claude_TMUX.md" ]] && { log_info "Restoring .claude/TMUX.md"; cp "$latest_backup/claude_TMUX.md" "$HOME/.claude/TMUX.md"; }
+    [[ -f "$latest_backup/claude_SEARCH.md" ]] && { log_info "Restoring .claude/SEARCH.md"; cp "$latest_backup/claude_SEARCH.md" "$HOME/.claude/SEARCH.md"; }
+    [[ -f "$latest_backup/claude_WEB.md" ]] && { log_info "Restoring .claude/WEB.md"; cp "$latest_backup/claude_WEB.md" "$HOME/.claude/WEB.md"; }
 
     log_success "Rollback complete from $latest_backup"
     log_info "Please restart your terminal"
@@ -329,6 +359,8 @@ main() {
     create_symlinks
     setup_tmux
     setup_claude
+    setup_zed
+    setup_gh
     setup_crawl4ai
 
     if [[ "$OS" == "macos" ]]; then
