@@ -281,6 +281,17 @@ setup_gh() {
     log_success "gh config setup complete"
 }
 
+# Setup playwright-cli global skills for Claude Code
+setup_playwright_cli() {
+    log_info "Setting up playwright-cli skills..."
+    if command -v playwright-cli &>/dev/null; then
+        run playwright-cli install --skills
+        log_success "playwright-cli skills installed"
+    else
+        log_warning "playwright-cli not found — run 'npm install -g @playwright/cli && playwright-cli install --skills' manually"
+    fi
+}
+
 # Setup crawl4ai (downloads Playwright browsers)
 setup_crawl4ai() {
     log_info "Setting up crawl4ai..."
@@ -359,6 +370,7 @@ main() {
     create_symlinks
     setup_tmux
     setup_claude
+    setup_playwright_cli
     setup_zed
     setup_gh
     setup_crawl4ai

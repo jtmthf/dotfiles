@@ -31,6 +31,9 @@ The installer symlinks into `~/.config/` via a bootstrap `~/.zshenv` that sets `
 - `config/claude/SEARCH.md` → `~/.claude/SEARCH.md`
 - `config/claude/WEB.md` → `~/.claude/WEB.md`
 
+One directory is written (not symlinked) at install time via `playwright-cli install --skills`:
+- `~/.claude/skills/playwright-cli/` — browser automation skill for Claude Code (sourced from the globally installed `@playwright/cli` npm package)
+
 Two files are written (not symlinked) at install time:
 - `~/.ssh/config.local` — platform-specific `IdentityAgent` path for 1Password SSH agent
 - `~/.config/git/config.local` — local git identity overrides (`user.name`, `user.email`, `user.signingKey`); created empty if absent
