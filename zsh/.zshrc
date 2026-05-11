@@ -5,9 +5,6 @@
 # Performance profiling (uncomment to debug startup time)
 # zmodload zsh/zprof
 
-# Early exit if not interactive
-[[ $- != *i* ]] && return
-
 # Zsh options for better interactive experience
 setopt AUTO_CD              # Auto cd to directory
 setopt AUTO_PUSHD           # Push directories to stack
@@ -104,9 +101,19 @@ if [[ -d "$PLUGINS_DIR/zsh-completions" ]]; then
     fpath=("$PLUGINS_DIR/zsh-completions/src" $fpath)
 fi
 
-# Mise activation (interactive sessions — full hooks for directory changes)
+# Mise activation for interactive sessions.
+# Login shells get full activate (precmd/chpwd hooks for directory-aware PATH).
+# Non-login interactive shells (e.g. Claude Code) get shims, which resolve
+# tool versions per-directory via PWD without relying on hooks.
 if command -v mise &> /dev/null; then
-    eval "$(mise activate zsh)"
+    if [[ -o login ]]; then
+        eval "$(mise activate zsh)"
+    else
+        # Restore original PATH to remove any hardcoded install dirs inherited
+        # from a parent login shell's full activation, then apply shims.
+        [[ -n "${__MISE_ORIG_PATH:-}" ]] && export PATH="$__MISE_ORIG_PATH"
+        eval "$(mise activate zsh --shims)"
+    fi
 fi
 
 # Initialize modern tools (lazy loading where possible)
