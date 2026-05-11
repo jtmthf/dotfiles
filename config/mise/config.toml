@@ -14,6 +14,7 @@ java = "openjdk-25"
 # Ruby
 ruby = "3.2"
 pnpm = "latest"
+bun = "latest"
 
 [env]
 # Global environment variables
