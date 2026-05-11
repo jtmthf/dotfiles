@@ -159,6 +159,50 @@ setup_tmux() {
     log_success "tmux config setup complete"
 }
 
+# Merge the repo's Claude settings.json into ~/.claude/settings.json non-destructively.
+# Semantics:
+#   - Deep object merge; live file wins on key conflicts
+#   - Arrays at .permissions.allow and .permissions.deny are union-ed (live first, then repo entries not already present)
+#   - Pre-merge live file is backed up once per install run
+# This is NOT a symlink — Claude Code mutates settings.json (plugin toggles, /config),
+# so we leave the live file authoritative and only top up shareable baseline entries.
+merge_claude_settings() {
+    local repo_settings="$DOTFILES_DIR/config/claude/settings.json"
+    local live_settings="$HOME/.claude/settings.json"
+
+    if ! command -v jq &> /dev/null; then
+        log_error "jq is required to merge Claude settings.json"
+        return 1
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY RUN] Would jq-merge $repo_settings into $live_settings (live wins on conflicts)"
+        return
+    fi
+
+    # Seed an empty object if the live file doesn't exist yet
+    if [[ ! -f "$live_settings" ]]; then
+        echo '{}' > "$live_settings"
+    else
+        cp "$live_settings" "$BACKUP_DIR/claude_settings.json.pre-merge"
+    fi
+
+    local tmp
+    tmp=$(mktemp)
+    jq -n \
+        --slurpfile repo "$repo_settings" \
+        --slurpfile live "$live_settings" '
+            def union_keep_order(a; b):
+                (a // []) as $a | (b // []) as $b | $a + ($b - $a);
+            ($repo[0] * $live[0])
+            | .permissions.allow = union_keep_order($live[0].permissions.allow; $repo[0].permissions.allow)
+            | .permissions.deny  = union_keep_order($live[0].permissions.deny;  $repo[0].permissions.deny)
+        ' > "$tmp"
+
+    mv "$tmp" "$live_settings"
+    log_info "Merged Claude settings.json (live retained on conflicts)"
+}
+
 # Setup Claude Code config
 setup_claude() {
     log_info "Setting up Claude Code config..."
@@ -166,7 +210,7 @@ setup_claude() {
     local claude_dir="$HOME/.claude"
     run mkdir -p "$claude_dir"
 
-    link_claude_file "$DOTFILES_DIR/config/claude/settings.json" "$claude_dir/settings.json" "claude_settings.json"
+    merge_claude_settings
     link_claude_file "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
     link_claude_file "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
     link_claude_file "$DOTFILES_DIR/config/claude/SEARCH.md" "$claude_dir/SEARCH.md" "claude_SEARCH.md"
@@ -331,7 +375,8 @@ rollback() {
     rm -rf "$HOME/.config/tmux/plugins/tpm"
     rm -f "$HOME/.config/zed/settings.json"
     rm -f "$HOME/.config/gh/config.yml"
-    rm -f "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md"
+    # settings.json is a real merged file, not a symlink — leave it in place and let the pre-merge restore (below) decide
+    rm -f "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md"
     rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
     rm -f "$HOME/.config/git/config"
 
@@ -349,8 +394,8 @@ rollback() {
     [[ -f "$latest_backup/git_config" ]] && { log_info "Restoring .config/git/config"; cp "$latest_backup/git_config" "$HOME/.config/git/config"; }
     [[ -f "$latest_backup/zed_settings.json" ]] && { log_info "Restoring .config/zed/settings.json"; mkdir -p "$HOME/.config/zed"; cp "$latest_backup/zed_settings.json" "$HOME/.config/zed/settings.json"; }
     [[ -f "$latest_backup/gh_config.yml" ]] && { log_info "Restoring .config/gh/config.yml"; mkdir -p "$HOME/.config/gh"; cp "$latest_backup/gh_config.yml" "$HOME/.config/gh/config.yml"; }
-    [[ -f "$latest_backup/claude_settings.json" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" ]] && mkdir -p "$HOME/.claude"
-    [[ -f "$latest_backup/claude_settings.json" ]] && { log_info "Restoring .claude/settings.json"; cp "$latest_backup/claude_settings.json" "$HOME/.claude/settings.json"; }
+    [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" ]] && mkdir -p "$HOME/.claude"
+    [[ -f "$latest_backup/claude_settings.json.pre-merge" ]] && { log_info "Restoring .claude/settings.json (pre-merge)"; cp "$latest_backup/claude_settings.json.pre-merge" "$HOME/.claude/settings.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
     [[ -f "$latest_backup/claude_TMUX.md" ]] && { log_info "Restoring .claude/TMUX.md"; cp "$latest_backup/claude_TMUX.md" "$HOME/.claude/TMUX.md"; }
     [[ -f "$latest_backup/claude_SEARCH.md" ]] && { log_info "Restoring .claude/SEARCH.md"; cp "$latest_backup/claude_SEARCH.md" "$HOME/.claude/SEARCH.md"; }
