@@ -35,6 +35,9 @@
       "type": "registry"
     }
   },
+  "prettier": {
+    "allowed": true
+  },
   "file_types": {
     "tailwindcss": ["*.css"]
   }
