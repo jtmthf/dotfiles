@@ -96,6 +96,8 @@ brew "p7zip"
 
 # macOS specific
 if OS.mac?
+  brew "terminal-notifier"   # tmux alert-bell → macOS notification
+
   # Fonts — plain variants + symbols-only fallback (no patched Nerd Fonts needed)
   cask "font-fira-code"
   cask "font-jetbrains-mono"
