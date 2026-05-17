@@ -231,7 +231,7 @@ create_symlinks() {
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would write $HOME/.zshenv"
         log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, mise/default-npm-packages, mise/default-python-packages, ghostty/config, and git/config; prepend Include to ~/.ssh/config"
+        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, mise/default-npm-packages, mise/default-python-packages, ghostty/config, opencode/, and git/config; prepend Include to ~/.ssh/config"
         log_info "[DRY RUN] Would write $HOME/.ssh/config.local with platform IdentityAgent"
     else
         cat > "$HOME/.zshenv" << 'ZSHENV'
@@ -259,6 +259,11 @@ ZSHENV
         # Ghostty config
         mkdir -p "$HOME/.config/ghostty"
         ln -sf "$DOTFILES_DIR/config/ghostty/config" "$HOME/.config/ghostty/config"
+
+        # OpenCode config
+        mkdir -p "$HOME/.config"
+        [[ -d "$HOME/.config/opencode" && ! -L "$HOME/.config/opencode" ]] && run mv "$HOME/.config/opencode" "$BACKUP_DIR/opencode"
+        ln -sf "$DOTFILES_DIR/dot_config/opencode" "$HOME/.config/opencode"
 
         # SSH config — written as a real file (not a symlink) so tools like
         # 1Password can append host entries without touching source-controlled files.
@@ -371,6 +376,7 @@ rollback() {
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
     rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml" "$HOME/.config/mise/default-npm-packages" "$HOME/.config/mise/default-python-packages"
     rm -f "$HOME/.config/ghostty/config"
+    rm -f "$HOME/.config/opencode"
     rm -f "$HOME/.config/tmux/tmux.conf"
     rm -rf "$HOME/.config/tmux/plugins/tpm"
     rm -f "$HOME/.config/zed/settings.json"
@@ -394,6 +400,7 @@ rollback() {
     [[ -f "$latest_backup/git_config" ]] && { log_info "Restoring .config/git/config"; cp "$latest_backup/git_config" "$HOME/.config/git/config"; }
     [[ -f "$latest_backup/zed_settings.json" ]] && { log_info "Restoring .config/zed/settings.json"; mkdir -p "$HOME/.config/zed"; cp "$latest_backup/zed_settings.json" "$HOME/.config/zed/settings.json"; }
     [[ -f "$latest_backup/gh_config.yml" ]] && { log_info "Restoring .config/gh/config.yml"; mkdir -p "$HOME/.config/gh"; cp "$latest_backup/gh_config.yml" "$HOME/.config/gh/config.yml"; }
+    [[ -d "$latest_backup/opencode" ]] && { log_info "Restoring .config/opencode"; rm -f "$HOME/.config/opencode"; cp -R "$latest_backup/opencode" "$HOME/.config/opencode"; }
     [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" ]] && mkdir -p "$HOME/.claude"
     [[ -f "$latest_backup/claude_settings.json.pre-merge" ]] && { log_info "Restoring .claude/settings.json (pre-merge)"; cp "$latest_backup/claude_settings.json.pre-merge" "$HOME/.claude/settings.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
