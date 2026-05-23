@@ -1,4 +1,9 @@
 {
+  "language_models": {
+    "opencode": {
+      "show_zen_models": false
+    }
+  },
   "icon_theme": "Catppuccin Macchiato",
   "theme": "One Dark",
   "base_keymap": "VSCode",
@@ -28,9 +33,17 @@
     "tree_view": true
   },
   "agent": {
+    "default_model": {
+      "provider": "opencode",
+      "model": "go/kimi-k2.5",
+      "enable_thinking": false
+    },
     "dock": "left"
   },
   "agent_servers": {
+    "opencode": {
+      "type": "registry"
+    },
     "claude-acp": {
       "type": "registry"
     }

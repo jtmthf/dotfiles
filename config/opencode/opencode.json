@@ -39,6 +39,7 @@
   "experimental": {
     "disable_paste_summary": true,
   },
+  "lsp": true,
   "agent": {
     "build": {
       "description": "Primary coding agent that delegates command execution to @executor",

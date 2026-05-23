@@ -263,7 +263,7 @@ ZSHENV
         # OpenCode config
         mkdir -p "$HOME/.config"
         [[ -d "$HOME/.config/opencode" && ! -L "$HOME/.config/opencode" ]] && run mv "$HOME/.config/opencode" "$BACKUP_DIR/opencode"
-        ln -sf "$DOTFILES_DIR/dot_config/opencode" "$HOME/.config/opencode"
+        ln -sf "$DOTFILES_DIR/config/opencode" "$HOME/.config/opencode"
 
         # SSH config — written as a real file (not a symlink) so tools like
         # 1Password can append host entries without touching source-controlled files.
