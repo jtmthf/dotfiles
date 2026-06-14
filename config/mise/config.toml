@@ -16,10 +16,20 @@ ruby = "3.2"
 pnpm = "latest"
 bun = "latest"
 
+# Global CLIs. Modern mise installs these as tools via the npm/pipx backends;
+# the old `default_packages_file` mechanism is deprecated.
+"npm:typescript-language-server" = "latest"
+"npm:typescript" = "latest"
+"npm:@playwright/cli" = "latest"
+"pipx:crawl4ai" = "latest"
+
 [env]
 # Global environment variables
 EDITOR = "nvim"
 PAGER = "bat"
+
+# Let uv defer to mise's managed Python instead of downloading its own.
+UV_PYTHON_PREFERENCE = "only-system"
 
 [settings]
 # Auto-install tools
@@ -27,8 +37,8 @@ auto_install = true
 
 idiomatic_version_file_enable_tools = ["node", "python", "java", "ruby"]
 
-node.default_packages_file = "~/.config/mise/default-npm-packages"
-python.default_packages_file = "~/.config/mise/default-python-packages"
+# Auto-create and source a uv-managed .venv when entering a project (needs uv).
+python.uv_venv_auto = "create|source"
 
 [plugins]
 # Additional plugins can be configured here

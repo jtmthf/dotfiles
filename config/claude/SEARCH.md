@@ -25,7 +25,6 @@ Available as MCP tools when a project has `.grepai/` initialized. Setup: `grepai
 
 ## Serena (MCP)
 
-- **Always call `activate_project` first** in a new session — every other Serena call returns "No active project" until you do.
 - `find_referencing_symbols` is the highest-leverage tool: returns referencing code with surrounding context grouped by file/symbol kind. Better than raw LSP `findReferences` when you need to reason about impact.
 - `get_symbols_overview` is faster than reading a file for orientation.
 - Less position-sensitive than LSP — prefer it when you're unsure of exact cursor placement.

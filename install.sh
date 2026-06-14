@@ -231,7 +231,7 @@ create_symlinks() {
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would write $HOME/.zshenv"
         log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, mise/default-npm-packages, mise/default-python-packages, ghostty/config, opencode/, and git/config; prepend Include to ~/.ssh/config"
+        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, ghostty/config, opencode/, and git/config; prepend Include to ~/.ssh/config"
         log_info "[DRY RUN] Would write $HOME/.ssh/config.local with platform IdentityAgent"
     else
         cat > "$HOME/.zshenv" << 'ZSHENV'
@@ -253,8 +253,6 @@ ZSHENV
         # Mise config
         mkdir -p "$HOME/.config/mise"
         ln -sf "$DOTFILES_DIR/config/mise/config.toml" "$HOME/.config/mise/config.toml"
-        ln -sf "$DOTFILES_DIR/config/mise/default-npm-packages" "$HOME/.config/mise/default-npm-packages"
-        ln -sf "$DOTFILES_DIR/config/mise/default-python-packages" "$HOME/.config/mise/default-python-packages"
 
         # Ghostty config
         mkdir -p "$HOME/.config/ghostty"
@@ -374,7 +372,7 @@ rollback() {
 
     # Remove symlinks
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
-    rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml" "$HOME/.config/mise/default-npm-packages" "$HOME/.config/mise/default-python-packages"
+    rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml"
     rm -f "$HOME/.config/ghostty/config"
     rm -f "$HOME/.config/opencode"
     rm -f "$HOME/.config/tmux/tmux.conf"

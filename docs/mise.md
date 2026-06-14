@@ -23,17 +23,25 @@ The global config at `config/mise/config.toml` declares which language runtimes 
 ```toml
 [tools]
 node = "lts"
-python = "3.11"
-java = "openjdk-17"
+python = "3.14"
+java = "openjdk-25"
 ruby = "3.2"
+
+# Global CLIs via mise backends (replaces the deprecated default_packages_file)
+"npm:typescript-language-server" = "latest"
+"pipx:crawl4ai" = "latest"
 
 [env]
 EDITOR = "nvim"
 PAGER = "bat"
+# uv reuses mise's managed Python instead of downloading its own
+UV_PYTHON_PREFERENCE = "only-system"
 
 [settings]
 auto_install = true
-legacy_version_file = true
+idiomatic_version_file_enable_tools = ["node", "python", "java", "ruby"]
+# Auto-create/source a uv-managed .venv when entering a project
+python.uv_venv_auto = "create|source"
 ```
 
 ### Managed languages
@@ -41,14 +49,25 @@ legacy_version_file = true
 | Tool | Version | Notes |
 |------|---------|-------|
 | Node.js | `lts` | Tracks the current LTS release |
-| Python | `3.11` | Pinned minor version |
-| Java | `openjdk-17` | OpenJDK LTS |
+| Python | `3.14` | Pinned minor version |
+| Java | `openjdk-25` | OpenJDK |
 | Ruby | `3.2` | Pinned minor version |
+
+### Global CLI tools
+
+Cross-language CLIs are declared directly in `[tools]` using mise's language backends -- `npm:` for Node packages and `pipx:` for Python packages. This replaces the older `default_packages_file` mechanism, which mise has deprecated. Each entry is installed and version-managed like any other tool, e.g. `"pipx:crawl4ai" = "latest"`.
+
+### uv integration
+
+`uv` (installed via Homebrew) handles Python virtualenvs, and mise is configured to cooperate with it:
+
+- **`python.uv_venv_auto = "create|source"`** -- when you enter a project, mise creates a uv-managed `.venv` if missing and sources it automatically (requires `mise activate`).
+- **`UV_PYTHON_PREFERENCE = "only-system"`** -- uv uses the Python on `PATH` (mise's managed interpreter) instead of downloading its own, so mise stays the single source of truth for Python versions.
 
 ### Settings
 
 - **auto_install** -- Mise automatically installs a missing runtime version when you `cd` into a project that requires it.
-- **legacy_version_file** -- Mise respects `.nvmrc`, `.python-version`, `.ruby-version`, `.tool-versions`, and similar files. This means existing projects that use nvm, pyenv, or rbenv version files work without any changes.
+- **idiomatic_version_file_enable_tools** -- Opt-in list of tools for which mise respects idiomatic version files (`.nvmrc`, `.python-version`, `.ruby-version`, etc.). Enabled here for node, python, java, and ruby, so existing projects that use nvm, pyenv, or rbenv version files work without changes. (This per-tool setting replaces the old global `legacy_version_file` flag.)
 
 ### Environment variables
 
@@ -107,4 +126,4 @@ For project-specific versions, create a `.mise.toml` or `.tool-versions` file in
 mise use node@20
 ```
 
-This writes a `.mise.toml` in the current directory, which takes precedence over the global config. Because `legacy_version_file = true`, you can also use `.nvmrc`, `.python-version`, or any other legacy format your team already relies on.
+This writes a `.mise.toml` in the current directory, which takes precedence over the global config. Because idiomatic version files are enabled (see `idiomatic_version_file_enable_tools`), you can also use `.nvmrc`, `.python-version`, or any other idiomatic format your team already relies on.

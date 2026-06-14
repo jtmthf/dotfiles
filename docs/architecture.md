@@ -17,7 +17,6 @@ The installer symlinks into `~/.config/` via a bootstrap `~/.zshenv` that sets `
 - `zsh/*` → `~/.config/zsh/`
 - `config/starship.toml` → `~/.config/starship.toml`
 - `config/mise/config.toml` → `~/.config/mise/config.toml`
-- `config/mise/default-npm-packages` → `~/.config/mise/default-npm-packages`
 - `config/ghostty/config` → `~/.config/ghostty/config`
 - `config/tmux/tmux.conf` → `~/.config/tmux/tmux.conf`
 - `config/ssh/config` → `~/.ssh/config`

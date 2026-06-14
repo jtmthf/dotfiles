@@ -183,8 +183,8 @@ qr "Hello World"
 Configured languages with sensible defaults:
 
 - Node.js: LTS version
-- Python: 3.11
-- Java: OpenJDK 17
+- Python: 3.14
+- Java: OpenJDK 25
 - Ruby: 3.2
 
 ### Starship Prompt
