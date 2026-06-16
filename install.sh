@@ -215,6 +215,8 @@ setup_claude() {
     link_claude_file "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
     link_claude_file "$DOTFILES_DIR/config/claude/SEARCH.md" "$claude_dir/SEARCH.md" "claude_SEARCH.md"
     link_claude_file "$DOTFILES_DIR/config/claude/WEB.md" "$claude_dir/WEB.md" "claude_WEB.md"
+    run chmod +x "$DOTFILES_DIR/config/claude/statusline.sh"
+    link_claude_file "$DOTFILES_DIR/config/claude/statusline.sh" "$claude_dir/statusline.sh" "claude_statusline.sh"
 
     log_success "Claude Code config setup complete"
 }

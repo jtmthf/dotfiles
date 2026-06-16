@@ -160,6 +160,12 @@
       }
     }
   },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "padding": 0,
+    "refreshInterval": 10
+  },
   "effortLevel": "medium",
   "teammateMode": "tmux",
   "mcpServers": {
