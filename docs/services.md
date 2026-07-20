@@ -1,10 +1,12 @@
 # Services
 
-Development services (PostgreSQL and Redis) are installed via the Brewfile and configured by `scripts/setup-services.zsh`. Service setup only runs on macOS, gated behind an `$OSTYPE` check in `install.sh`.
+Development services (PostgreSQL and Redis) are installed via the Brewfile as standard formulae and configured on demand by `scripts/setup-services.zsh`. This script is **not** run automatically by `install.sh` — run it manually after install: `zsh scripts/setup-services.zsh`.
 
 ## How services are started
 
-Both services declare `restart_service: true` in the Brewfile, so Homebrew registers them as background services that start automatically on login. The setup script (`scripts/setup-services.zsh`) acts as a safety net: it checks whether each service is already running, starts any that are not, and performs first-run initialization (creating the default database for PostgreSQL, verifying connectivity for Redis).
+PostgreSQL and Redis are plain `brew` formulae in the Brewfile — they are not registered to auto-start. Run `scripts/setup-services.zsh` to bring them up: it checks whether each service is already running, starts any that are not with `brew services`, and performs first-run initialization (creating the default database for PostgreSQL, verifying connectivity for Redis). Once started, `brew services` keeps them running across logins.
+
+(For contrast, Ollama declares `start_service: true` in the Brewfile, so `brew bundle` starts it automatically during install.)
 
 ## PostgreSQL
 
