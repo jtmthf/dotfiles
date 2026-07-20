@@ -381,6 +381,8 @@ _write_launchd_plist() {
         <key>Hour</key><integer>$hour</integer>
         <key>Minute</key><integer>$min</integer>
     </dict>
+    <key>StartInterval</key>
+    <integer>21600</integer>
     <key>StandardOutPath</key>
     <string>$log_dir/$name.log</string>
     <key>StandardErrorPath</key>
@@ -408,10 +410,14 @@ _install_maint_cron() {
 
     local block name hour min
     block="# >>> dotfiles-maint >>>"$'\n'
-    block+="# Managed by dotfiles install.sh — edit config/maintenance/config.sh, not here"$'\n'
+    block+="# Managed by dotfiles install.sh — edit config/maintenance/config.sh, not here."$'\n'
+    block+="# Polls every 6h; each job does real work at most once per MAINT_MIN_INTERVAL_DAYS,"$'\n'
+    block+="# so a run missed while the machine was off happens the next time it is on."$'\n'
     for job in "$@"; do
+        # hour is only used by the launchd calendar slot; cron polls every 6h.
+        # shellcheck disable=SC2034
         read -r name hour min <<< "$job"
-        block+="$min $hour * * 0 /bin/bash $DOTFILES_DIR/scripts/maintenance/$name.sh >> $log_dir/$name.log 2>&1"$'\n'
+        block+="$min */6 * * * /bin/bash $DOTFILES_DIR/scripts/maintenance/$name.sh >> $log_dir/$name.log 2>&1"$'\n'
     done
     block+="# <<< dotfiles-maint <<<"
 

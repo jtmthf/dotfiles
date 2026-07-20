@@ -4,6 +4,7 @@
 #
 # Targets bash 3.2 (macOS system /bin/bash) — no namerefs or associative arrays.
 
+# shellcheck disable=SC2034  # config defaults are consumed by the sourcing job scripts
 MAINT_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAINT_DOTFILES_DIR="$(cd "$MAINT_LIB_DIR/.." && pwd)"
 
@@ -21,11 +22,13 @@ export PATH
 unset _maint_p
 
 # --- Configuration defaults (overridden by config/maintenance/config.sh) ------
-# shellcheck disable=SC2034  # consumed by the job scripts that source this file
 MAINT_SCAN_ROOTS=("$HOME/Projects")
 MAINT_NODE_MODULES_MAX_AGE_DAYS=30
 MAINT_WORKTREE_MAX_AGE_DAYS=14
 MAINT_TRASH_RETENTION_DAYS=30
+# Minimum days between real runs of a job. The schedulers poll far more often
+# than this; the gap is what enforces the weekly cadence and enables catch-up.
+MAINT_MIN_INTERVAL_DAYS="${MAINT_MIN_INTERVAL_DAYS:-6}"
 # Env wins over config so `--dry-run` (which exports MAINT_DRY_RUN=1) is honored.
 MAINT_DRY_RUN="${MAINT_DRY_RUN:-0}"
 
@@ -38,10 +41,36 @@ fi
 # --- State / logs -------------------------------------------------------------
 MAINT_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-maint"
 MAINT_LOG_DIR="$MAINT_STATE_DIR/logs"
-mkdir -p "$MAINT_LOG_DIR"
+MAINT_STAMP_DIR="$MAINT_STATE_DIR/last-run"
+mkdir -p "$MAINT_LOG_DIR" "$MAINT_STAMP_DIR"
 
 # True when running in preview mode (no changes made).
 maint_is_dry_run() { [[ "$MAINT_DRY_RUN" == "1" || "$MAINT_DRY_RUN" == "true" ]]; }
+
+# Returns 0 (due) when a job should run now, 1 when it ran within the last
+# MAINT_MIN_INTERVAL_DAYS. Always due in dry-run so previews show work.
+#
+# This is the catch-up mechanism: the schedulers poll frequently (launchd every
+# few hours + on the calendar slot; cron every few hours), but a job only does
+# real work once its interval has elapsed. So a run missed while the Mac was
+# asleep or powered off simply happens the next time the machine is awake.
+maint_due() {
+    local job="$1"
+    maint_is_dry_run && return 0
+    local stamp="$MAINT_STAMP_DIR/$job"
+    [[ -f "$stamp" ]] || return 0
+    local last now
+    last="$(cat "$stamp" 2>/dev/null || echo 0)"
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    now="$(date +%s)"
+    [[ $(( (now - last) / 86400 )) -ge "$MAINT_MIN_INTERVAL_DAYS" ]]
+}
+
+# Record a successful run so maint_due gates the next interval.
+maint_mark_ran() {
+    maint_is_dry_run && return 0
+    date +%s > "$MAINT_STAMP_DIR/$1"
+}
 
 # Print a run header. Also stamps the (redirected) log with the current time.
 maint_start() {

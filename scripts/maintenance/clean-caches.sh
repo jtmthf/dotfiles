@@ -14,6 +14,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/maintenance.sh
 source "$SCRIPT_DIR/../../lib/maintenance.sh"
 
+# Skip quietly unless due (catch-up gate). Dry-run always proceeds.
+maint_due "clean-caches" || exit 0
+
 maint_start "clean-caches"
 
 # Known cache locations, used to estimate reclaimed space before/after.
@@ -83,3 +86,5 @@ freed=$((before - after))
 
 log_success "caches: freed ~$(maint_human "$freed") (measured across known cache dirs)"
 maint_notify "Maintenance: caches" "Freed ~$(maint_human "$freed")"
+
+maint_mark_ran "clean-caches"

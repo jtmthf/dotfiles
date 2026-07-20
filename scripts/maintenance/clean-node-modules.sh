@@ -12,6 +12,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/maintenance.sh
 source "$SCRIPT_DIR/../../lib/maintenance.sh"
 
+# Skip quietly unless due (catch-up gate). Dry-run always proceeds.
+maint_due "clean-node-modules" || exit 0
+
 maint_start "clean-node-modules"
 
 max_days="$MAINT_NODE_MODULES_MAX_AGE_DAYS"
@@ -69,3 +72,5 @@ log_success "node_modules: trashed ${total_count} dir(s), freed ~$(maint_human "
 if [[ "$total_count" -gt 0 ]]; then
     maint_notify "Maintenance: node_modules" "Trashed ${total_count} project(s), freed ~$(maint_human "$total_freed")"
 fi
+
+maint_mark_ran "clean-node-modules"

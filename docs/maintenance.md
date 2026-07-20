@@ -13,6 +13,22 @@ macOS and a managed **crontab** block on Linux/WSL.
 | `clean-caches` | 04:00 | Prune brew/npm/pnpm/yarn/uv/go caches and Xcode DerivedData via each tool's native command (gated on `command -v`). | deleted outright (regenerable) |
 | `empty-trash` | 04:30 | Permanently delete trashed items older than `MAINT_TRASH_RETENTION_DAYS` (default 30). | deleted |
 
+The Sunday times are the *preferred* slot, not the only chance to run — see
+[Catch-up](#catch-up) below.
+
+## Catch-up
+
+The schedulers **poll** rather than fire once: launchd runs each agent on the
+Sunday slot **and** every ~6 hours (`StartInterval`), and Linux cron runs every
+~6 hours. Each job then does real work at most once per `MAINT_MIN_INTERVAL_DAYS`
+(default 6), tracked by a timestamp in
+`${XDG_STATE_HOME:-~/.local/state}/dotfiles-maint/last-run/<job>`.
+
+This is deliberate: a Mac asleep or powered off at 3 AM Sunday would miss a
+plain calendar job, but here the missed run simply happens the next time the
+machine is awake and the interval has elapsed. Polls that aren't yet due exit
+immediately and write nothing to the logs.
+
 ## Safety model
 
 - Anything that could hold work goes to the **Trash** (`trash` on macOS,
@@ -34,6 +50,7 @@ MAINT_SCAN_ROOTS=("$HOME/Projects")
 MAINT_NODE_MODULES_MAX_AGE_DAYS=30
 MAINT_WORKTREE_MAX_AGE_DAYS=14
 MAINT_TRASH_RETENTION_DAYS=30
+MAINT_MIN_INTERVAL_DAYS=6      # how often each job actually does work
 ```
 
 ## Running manually / previewing

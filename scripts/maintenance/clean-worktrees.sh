@@ -16,6 +16,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/maintenance.sh
 source "$SCRIPT_DIR/../../lib/maintenance.sh"
 
+# Skip quietly unless due (catch-up gate). Dry-run always proceeds.
+maint_due "clean-worktrees" || exit 0
+
 max_days="$MAINT_WORKTREE_MAX_AGE_DAYS"
 now="$(date +%s)"
 removed=0
@@ -105,3 +108,5 @@ log_success "worktrees: removed ${removed}, freed ~$(maint_human "$freed")"
 if [[ "$removed" -gt 0 ]]; then
     maint_notify "Maintenance: worktrees" "Removed ${removed} abandoned worktree(s), freed ~$(maint_human "$freed")"
 fi
+
+maint_mark_ran "clean-worktrees"

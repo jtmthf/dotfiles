@@ -16,6 +16,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/maintenance.sh
 source "$SCRIPT_DIR/../../lib/maintenance.sh"
 
+# Skip quietly unless due (catch-up gate). Dry-run always proceeds.
+maint_due "empty-trash" || exit 0
+
 maint_start "empty-trash"
 
 days="$MAINT_TRASH_RETENTION_DAYS"
@@ -30,12 +33,14 @@ if [[ "$OSTYPE" == linux* ]] && command -v trash-empty >/dev/null 2>&1; then
     fi
     log_success "empty-trash complete"
     maint_notify "Maintenance: Trash" "Emptied items older than ${days}d"
+    maint_mark_ran "empty-trash"
     exit 0
 fi
 
 trash_dir="$HOME/.Trash"
 if [[ ! -d "$trash_dir" ]]; then
     log_info "No Trash directory at $trash_dir"
+    maint_mark_ran "empty-trash"
     exit 0
 fi
 
@@ -55,3 +60,5 @@ log_success "empty-trash: purged ${count} item(s), freed ~$(maint_human "$freed"
 if [[ "$count" -gt 0 ]]; then
     maint_notify "Maintenance: Trash" "Purged ${count} item(s), freed ~$(maint_human "$freed")"
 fi
+
+maint_mark_ran "empty-trash"
