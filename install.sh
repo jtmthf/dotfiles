@@ -360,6 +360,114 @@ setup_colima() {
     fi
 }
 
+# Write a launchd agent plist for a weekly maintenance job (Sunday, hour:min).
+_write_launchd_plist() {
+    local plist="$1" label="$2" name="$3" hour="$4" min="$5" log_dir="$6"
+    cat > "$plist" << PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>$label</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$DOTFILES_DIR/scripts/maintenance/$name.sh</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key><integer>0</integer>
+        <key>Hour</key><integer>$hour</integer>
+        <key>Minute</key><integer>$min</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>$log_dir/$name.log</string>
+    <key>StandardErrorPath</key>
+    <string>$log_dir/$name.err.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
+PLIST
+}
+
+# Install the managed crontab block for maintenance jobs (Linux/WSL).
+# Args: <log_dir> then "name hour min" job specs.
+_install_maint_cron() {
+    local log_dir="$1"; shift
+    if ! command -v crontab &> /dev/null; then
+        log_warning "crontab not found — skipping maintenance scheduling"
+        return
+    fi
+
+    local block name hour min
+    block="# >>> dotfiles-maint >>>"$'\n'
+    block+="# Managed by dotfiles install.sh — edit config/maintenance/config.sh, not here"$'\n'
+    for job in "$@"; do
+        read -r name hour min <<< "$job"
+        block+="$min $hour * * 0 /bin/bash $DOTFILES_DIR/scripts/maintenance/$name.sh >> $log_dir/$name.log 2>&1"$'\n'
+    done
+    block+="# <<< dotfiles-maint <<<"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY RUN] Would install dotfiles-maint crontab block:"
+        printf '%s\n' "$block"
+        return
+    fi
+
+    local current
+    current=$(crontab -l 2>/dev/null | awk '/# >>> dotfiles-maint >>>/{s=1} !s; /# <<< dotfiles-maint <<</{s=0}')
+    printf '%s\n%s\n' "$current" "$block" | crontab -
+    log_success "Maintenance cron installed"
+}
+
+# Setup scheduled maintenance jobs (node_modules / worktrees / caches / trash)
+setup_maintenance() {
+    log_info "Setting up scheduled maintenance jobs..."
+
+    run chmod +x "$DOTFILES_DIR"/scripts/maintenance/*.sh
+
+    local log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-maint/logs"
+    run mkdir -p "$log_dir"
+
+    # Weekly schedule (Sunday), staggered: "name hour minute"
+    local jobs=(
+        "clean-node-modules 3 0"
+        "clean-worktrees 3 30"
+        "clean-caches 4 0"
+        "empty-trash 4 30"
+    )
+
+    if [[ "$OS" == "macos" ]]; then
+        local agents_dir="$HOME/Library/LaunchAgents"
+        run mkdir -p "$agents_dir"
+        local job name hour min label plist
+        for job in "${jobs[@]}"; do
+            read -r name hour min <<< "$job"
+            label="com.jackmoore.maint.$name"
+            plist="$agents_dir/$label.plist"
+            if [[ "$DRY_RUN" == true ]]; then
+                log_info "[DRY RUN] Would write $plist and load $label (Sun ${hour}:$(printf '%02d' "$min"))"
+                continue
+            fi
+            launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+            _write_launchd_plist "$plist" "$label" "$name" "$hour" "$min" "$log_dir"
+            launchctl bootstrap "gui/$(id -u)" "$plist" 2>/dev/null \
+                || launchctl load "$plist" 2>/dev/null \
+                || log_warning "Could not load $label"
+        done
+        log_success "launchd maintenance agents installed"
+    else
+        _install_maint_cron "$log_dir" "${jobs[@]}"
+    fi
+}
+
 # Rollback from most recent backup
 rollback() {
     local latest_backup
@@ -385,6 +493,18 @@ rollback() {
     rm -f "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md"
     rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
     rm -f "$HOME/.config/git/config"
+
+    # Remove scheduled maintenance jobs
+    if [[ "$OS" == "macos" ]]; then
+        for name in clean-node-modules clean-worktrees clean-caches empty-trash; do
+            launchctl bootout "gui/$(id -u)/com.jackmoore.maint.$name" 2>/dev/null || true
+            rm -f "$HOME/Library/LaunchAgents/com.jackmoore.maint.$name.plist"
+        done
+    elif command -v crontab &> /dev/null; then
+        crontab -l 2>/dev/null \
+            | awk '/# >>> dotfiles-maint >>>/{s=1} !s; /# <<< dotfiles-maint <<</{s=0}' \
+            | crontab - 2>/dev/null || true
+    fi
 
     # Restore backed-up files
     for file in "$latest_backup"/.*; do
@@ -426,6 +546,7 @@ main() {
     setup_zed
     setup_gh
     setup_crawl4ai
+    setup_maintenance
 
     if [[ "$OS" == "macos" ]]; then
         setup_colima

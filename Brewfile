@@ -146,6 +146,7 @@ if OS.mac?
   cask "imageoptim"
   cask "qlmarkdown"
   cask "the-unarchiver"
+  brew "trash"         # Move files to Trash from the CLI (maintenance jobs)
 
   # AI / LLM
   cask "claude"
@@ -157,4 +158,5 @@ if OS.linux?
   brew "gcc"
   brew "make"
   brew "build-essential" if system("command -v apt-get")
+  brew "trash-cli"     # trash-put/trash-empty for the maintenance jobs
 end

@@ -35,3 +35,4 @@ time zsh -i -c exit
 ## Deep Dive
 
 - [Architecture](docs/architecture.md) — zsh load order, symlink layout, shared utilities
+- [Maintenance](docs/maintenance.md) — scheduled cleanup jobs (node_modules, worktrees, caches, trash)
