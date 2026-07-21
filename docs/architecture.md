@@ -19,6 +19,7 @@ The installer symlinks into `~/.config/` via a bootstrap `~/.zshenv` that sets `
 - `config/mise/config.toml` → `~/.config/mise/config.toml`
 - `config/ghostty/config` → `~/.config/ghostty/config`
 - `config/tmux/tmux.conf` → `~/.config/tmux/tmux.conf`
+- `config/sesh/sesh.toml` → `~/.config/sesh/sesh.toml`
 - `config/ssh/config` → `~/.ssh/config`
 - `config/git/config` → `~/.config/git/config`
 - `config/git/ignore` → `~/.config/git/ignore`
@@ -38,6 +39,28 @@ Two files are written (not symlinked) at install time:
 - `~/.config/git/config.local` — local git identity overrides (`user.name`, `user.email`, `user.signingKey`); created empty if absent
 
 Note: `~/.claude/` is a non-XDG exception (like `~/.ssh/`); Claude Code does not follow the `~/.config/` convention.
+
+## Worktree sessions (`scripts/cw/`)
+
+`cw` runs one git worktree per branch, each backed by a tmux session holding one
+or more tracked Claude Code sessions. `scripts/cw/cw` is the CLI, `cw-lib.sh` the
+shared library (paths, manifest schema, zoxide, waiting markers), and
+`cw-dashboard.sh` + `hooks/*.sh` the dashboard popup and Claude
+Stop/UserPromptSubmit hooks. `install.sh` (`setup_cw`) makes them executable and
+merges the hooks into `~/.claude/settings.json`; the `cw` shell function invokes
+the scripts by path, so nothing is added to `PATH`.
+
+Worktrees live *inside* the repo at `<repo>/.claude/worktrees/<slug>` — the same
+directory Claude Code's native `claude --worktree` uses — kept out of the main
+checkout's `git status` via `.git/info/exclude`. Runtime state lives outside the
+repo under `${XDG_STATE_HOME:-~/.local/state}/cw/`:
+
+- `manifest.json` — worktrees, their tmux session names, notes, and Claude session
+  ids; mutated atomically through a jq-program-plus-`mv` under a `mkdir` lock.
+- `waiting/<uuid>` — one empty file per Claude session awaiting input.
+- `pr-cache.json` — cached PR status for the dashboard.
+
+See [Worktrees](worktrees.md) for the full workflow.
 
 ## Shared utilities
 

@@ -1,0 +1,250 @@
+#!/usr/bin/env bash
+# cw — worktree-backed tmux sessions, one per branch, with tracked Claude sessions.
+#
+#   cw <branch> [note…]   Create/attach the session for <branch>; optional purpose note
+#   cw c [label]          Spawn another Claude session in the current worktree (new pane)
+#   cw note [text]        Show/set the current worktree's note (no text → print)
+#   cw note --gen         Regenerate the note from the branch diff via haiku
+#   cw ls                 List tracked worktrees
+#   cw rm <branch>        Remove the worktree, kill its session, forget it
+#   cw board              Open the dashboard popup (also `prefix + w` in tmux)
+#
+# Worktrees live at <repo>/.claude/worktrees/<branch>. State (notes, session ids,
+# waiting flags) lives under ${XDG_STATE_HOME:-~/.local/state}/cw. See docs/worktrees.md.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./cw-lib.sh
+source "$SCRIPT_DIR/cw-lib.sh"
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+_cw_die() { echo "cw: $*" >&2; return 1; }
+
+_cw_in_repo() {
+    git rev-parse --show-toplevel >/dev/null 2>&1 || _cw_die "not inside a git repository"
+}
+
+_cw_current_wt() { git rev-parse --show-toplevel 2>/dev/null; }
+
+# Default branch ref for diff bases (origin/HEAD → main → master → HEAD).
+_cw_base_ref() {
+    local dir="${1:-$PWD}" ref b
+    ref="$(git -C "$dir" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null || true)"
+    if [[ -n "$ref" ]]; then printf '%s\n' "${ref#refs/remotes/}"; return; fi
+    for b in main master; do
+        git -C "$dir" show-ref --verify --quiet "refs/heads/$b" && { printf '%s\n' "$b"; return; }
+    done
+    printf 'HEAD\n'
+}
+
+# Keep worktrees out of the main checkout's status without touching tracked files.
+_cw_ensure_exclude() {
+    local main_root="$1" gitdir ex
+    gitdir="$(git -C "$main_root" rev-parse --git-common-dir 2>/dev/null || true)"
+    [[ -n "$gitdir" ]] || return 0
+    case "$gitdir" in /*) ;; *) gitdir="$main_root/$gitdir" ;; esac
+    ex="$gitdir/info/exclude"
+    mkdir -p "$(dirname "$ex")"
+    grep -qxF '/.claude/worktrees/' "$ex" 2>/dev/null || printf '/.claude/worktrees/\n' >> "$ex"
+}
+
+# Replicate Claude Code's .worktreeinclude: copy gitignored files into the worktree.
+_cw_copy_includes() {
+    local main_root="$1" wt_path="$2" inc="$1/.worktreeinclude" line f
+    [[ -f "$inc" ]] || return 0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%%#*}"
+        line="$(printf '%s' "$line" | awk '{$1=$1;print}')"   # trim
+        [[ -z "$line" ]] && continue
+        ( cd "$main_root" || exit 0
+          shopt -s nullglob
+          for f in $line; do
+              [[ -e "$f" ]] || continue
+              git check-ignore -q "$f" 2>/dev/null || continue
+              mkdir -p "$wt_path/$(dirname "$f")"
+              cp -R "$f" "$wt_path/$f"
+          done )
+    done < "$inc"
+}
+
+# Launch a tracked Claude session in an existing pane.
+_cw_launch_claude() {
+    local pane="$1" wt_path="$2" name="$3" uuid
+    uuid="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+    tmux select-pane -t "$pane" -T "$name" 2>/dev/null || true
+    if command -v claude >/dev/null 2>&1; then
+        tmux send-keys -t "$pane" "claude --session-id $uuid --name $name" Enter
+    fi
+    cw_wt_add_session "$wt_path" "$uuid" "$name" "$pane"
+}
+
+# ── subcommands ──────────────────────────────────────────────────────────────
+
+cw_cmd_create() {
+    local branch="$1"; shift || true
+    local note="$*"
+    [[ -n "$branch" ]] || _cw_die "branch name required"
+    _cw_in_repo
+
+    local main_root repo wt_path session
+    main_root="$(cw_repo_root)"
+    repo="$(basename "$main_root")"
+    wt_path="$(cw_wt_path "$main_root" "$branch")"
+    session="$(cw_session_name "$repo" "$branch")"
+
+    _cw_ensure_exclude "$main_root"
+
+    if [[ ! -d "$wt_path" ]]; then
+        mkdir -p "$(dirname "$wt_path")"
+        if git -C "$main_root" show-ref --verify --quiet "refs/heads/$branch"; then
+            git -C "$main_root" worktree add "$wt_path" "$branch"
+        else
+            git -C "$main_root" worktree add -b "$branch" "$wt_path"
+        fi
+        _cw_copy_includes "$main_root" "$wt_path"
+    fi
+
+    cw_wt_upsert "$wt_path" "$repo" "$branch" "$session"
+    cw_zoxide_add "$wt_path"
+    [[ -n "$note" ]] && cw_wt_set_note "$wt_path" "$note" "manual"
+
+    if ! tmux has-session -t "$session" 2>/dev/null; then
+        tmux new-session -d -s "$session" -c "$wt_path" -n main
+        tmux set-environment -t "$session" WORKTREE_BRANCH "$branch"
+        local pane
+        pane="$(tmux display-message -p -t "$session:main.1" '#{pane_id}')"
+        _cw_launch_claude "$pane" "$wt_path" "$(cw_slug "$branch")"
+    fi
+
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$session"
+    else
+        tmux attach-session -t "$session"
+    fi
+}
+
+cw_cmd_spawn() {
+    _cw_in_repo
+    [[ -n "${TMUX:-}" ]] || _cw_die "run 'cw c' from inside a worktree tmux session"
+    local wt_path session base name pane
+    wt_path="$(_cw_current_wt)"
+    session="$(cw_manifest_query -r '.worktrees[$p].session // empty' --arg p "$wt_path")"
+    [[ -n "$session" ]] || _cw_die "current directory isn't a cw worktree ($wt_path)"
+    base="$(cw_manifest_query -r '.worktrees[$p].branch' --arg p "$wt_path")"
+    base="$(cw_slug "$base")"
+    name="$(cw_wt_next_session_name "$wt_path" "$base")"
+    pane="$(tmux split-window -t "$session:" -c "$wt_path" -P -F '#{pane_id}')"
+    _cw_launch_claude "$pane" "$wt_path" "$name"
+}
+
+cw_cmd_note() {
+    _cw_in_repo
+    local wt_path; wt_path="$(_cw_current_wt)"
+    cw_wt_json "$wt_path" >/dev/null 2>&1 || true
+    local exists; exists="$(cw_manifest_query -r 'if .worktrees[$p] then "y" else "n" end' --arg p "$wt_path")"
+    [[ "$exists" == "y" ]] || _cw_die "current directory isn't a cw worktree"
+
+    if [[ "${1:-}" == "--gen" ]]; then
+        command -v claude >/dev/null 2>&1 || _cw_die "claude not found for --gen"
+        local branch base stat log prompt out
+        branch="$(git -C "$wt_path" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+        base="$(_cw_base_ref "$wt_path")"
+        stat="$(git -C "$wt_path" diff --stat "${base}...HEAD" 2>/dev/null | tail -n 20 || true)"
+        log="$(git -C "$wt_path" log --oneline -n 10 "${base}..HEAD" 2>/dev/null || true)"
+        prompt="In 12 words or fewer, describe what this git branch is for. Reply with the description only, no preamble.
+Branch: ${branch}
+Recent commits:
+${log}
+Changed files:
+${stat}"
+        out="$(printf '%s' "$prompt" | claude -p --model haiku --no-session-persistence 2>/dev/null | head -n1 || true)"
+        [[ -n "$out" ]] || _cw_die "haiku returned nothing"
+        cw_wt_set_note "$wt_path" "$out" "haiku"
+        printf '%s\n' "$out"
+        return 0
+    fi
+
+    if [[ $# -eq 0 ]]; then
+        cw_manifest_query -r '.worktrees[$p].note // ""' --arg p "$wt_path"
+    else
+        cw_wt_set_note "$wt_path" "$*" "manual"
+    fi
+}
+
+cw_cmd_ls() {
+    local paths p branch note session
+    paths="$(cw_list_wt_paths)"
+    [[ -n "$paths" ]] || { echo "no tracked worktrees"; return 0; }
+    while IFS= read -r p; do
+        [[ -n "$p" ]] || continue
+        branch="$(cw_manifest_query -r '.worktrees[$p].branch' --arg p "$p")"
+        session="$(cw_manifest_query -r '.worktrees[$p].session' --arg p "$p")"
+        note="$(cw_manifest_query -r '.worktrees[$p].note // ""' --arg p "$p")"
+        local live=" "; tmux has-session -t "$session" 2>/dev/null && live="●"
+        printf '%s  %-28s  %s\n' "$live" "$branch" "$note"
+    done <<< "$paths"
+}
+
+cw_cmd_rm() {
+    local branch="$1"
+    [[ -n "$branch" ]] || _cw_die "branch name required"
+    _cw_in_repo
+    local main_root repo wt_path session ids id
+    main_root="$(cw_repo_root)"
+    repo="$(basename "$main_root")"
+    wt_path="$(cw_wt_path "$main_root" "$branch")"
+    session="$(cw_session_name "$repo" "$branch")"
+
+    ids="$(cw_manifest_query -r '.worktrees[$p].sessions | keys[]' --arg p "$wt_path" || true)"
+    for id in $ids; do cw_clear_waiting "$id"; done
+
+    tmux has-session -t "$session" 2>/dev/null && tmux kill-session -t "$session"
+    if [[ -d "$wt_path" ]]; then
+        ( cd "$main_root" && git worktree remove --force "$wt_path" )
+    fi
+    cw_zoxide_remove "$wt_path"
+    cw_wt_remove "$wt_path"
+    echo "removed: $session ($wt_path)"
+}
+
+cw_cmd_board() {
+    local dash="$SCRIPT_DIR/cw-dashboard.sh"
+    [[ -x "$dash" || -f "$dash" ]] || _cw_die "dashboard not installed ($dash)"
+    exec bash "$dash" "$@"
+}
+
+cw_usage() {
+    cat <<'EOF'
+cw — worktree-backed tmux sessions, one per branch, with tracked Claude sessions.
+
+  cw <branch> [note…]   Create/attach the session for <branch>; optional purpose note
+  cw c [label]          Spawn another Claude session in the current worktree (new pane)
+  cw note [text]        Show/set the current worktree's note (no text → print)
+  cw note --gen         Regenerate the note from the branch diff via haiku
+  cw ls                 List tracked worktrees
+  cw rm <branch>        Remove the worktree, kill its session, forget it
+  cw board              Open the dashboard popup (also `prefix + w` in tmux)
+
+Worktrees live at <repo>/.claude/worktrees/<branch>. State lives under
+${XDG_STATE_HOME:-~/.local/state}/cw. See docs/worktrees.md.
+EOF
+}
+
+# ── dispatch ─────────────────────────────────────────────────────────────────
+
+main() {
+    local cmd="${1:-}"
+    case "$cmd" in
+        c|spawn)       shift; cw_cmd_spawn "$@" ;;
+        note)          shift; cw_cmd_note "$@" ;;
+        ls|list|-l)    cw_cmd_ls ;;
+        rm|remove|-r)  shift; cw_cmd_rm "${1:-}" ;;
+        board|-b)      shift; cw_cmd_board "$@" ;;
+        -h|--help|"")  cw_usage ;;
+        -*)            _cw_die "unknown flag: $cmd" ;;
+        *)             cw_cmd_create "$@" ;;
+    esac
+}
+
+main "$@"

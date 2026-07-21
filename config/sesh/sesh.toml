@@ -1,0 +1,47 @@
+# sesh.toml — smart tmux session manager (joshmedeski/sesh)
+#
+# Bound to `prefix + s` in config/tmux/tmux.conf: opens a fuzzy picker for
+# switching between tmux sessions and directories. Complements `cw` (prefix + w),
+# which owns the git-worktree workflow; sesh is the general-purpose switcher.
+#
+# Schema reference: https://github.com/joshmedeski/sesh (config was authored from
+# the documented schema — sesh was not installed on the machine at write time).
+#
+# zoxide integration is AUTOMATIC: sesh merges your zoxide directory history into
+# the picker with no config needed. Because `cw` registers every worktree dir with
+# `zoxide add`, active worktrees show up here too (and `z <branch>` jumps to them).
+
+# Session names to hide from the picker.
+blacklist = ["scratch"]
+
+# How many trailing path components to show in a directory's session name.
+dir_length = 2
+
+# Display order of result sources in the picker.
+sort_order = ["tmux", "config", "zoxide"]
+
+# Picker (fzf-tmux) appearance.
+[tui]
+prompt = "  "
+placeholder = "search sessions and directories… "
+show_icons = true
+
+# Applied to any session that has no explicit [[session]] entry.
+[default_session]
+preview_command = "eza --all --git --icons --color=always {}"
+
+# Named quick-jump sessions.
+[[session]]
+name = "dotfiles"
+path = "~/Projects/dotfiles"
+preview_command = "eza --all --git --icons --color=always ~/Projects/dotfiles"
+
+[[session]]
+name = "config"
+path = "~/.config"
+
+# Any git worktree created by `cw` lives here; give those dirs a sensible preview
+# in the picker. `cw` itself launches Claude inside them, so no startup command.
+[[wildcard]]
+pattern = "*/.claude/worktrees/*"
+preview_command = "eza --all --git --icons --color=always {}"

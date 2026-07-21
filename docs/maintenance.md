@@ -36,6 +36,11 @@ immediately and write nothing to the logs.
   it after the retention window.
 - Worktrees are touched only when git confirms the working tree is clean, an
   upstream exists, and there are no unpushed commits — so nothing local is lost.
+  This includes `cw` worktrees at `<repo>/.claude/worktrees/` (see
+  [Worktrees](worktrees.md)): `clean-worktrees` walks `git worktree list`, so an
+  abandoned one that's clean, fully pushed, and idle for 14+ days is trashed like
+  any other. The main checkout is never touched. `cw`'s manifest entry for a
+  trashed worktree lingers harmlessly until `cw rm <branch>`.
 - Caches are the one outright-delete, because they self-rebuild. **Docker is
   excluded** (pruning can drop volumes/data); use the `docker-cleanup` shell
   function manually.

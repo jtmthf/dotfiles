@@ -121,6 +121,26 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.dotfiles/scripts/cw/hooks/cw-hook-stop.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.dotfiles/scripts/cw/hooks/cw-hook-userprompt.sh"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

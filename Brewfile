@@ -53,6 +53,7 @@ brew "wget"
 brew "httpie"
 brew "tree"
 brew "tmux"
+brew "sesh"          # tmux session manager (worktree/dir switcher)
 brew "neovim"
 brew "lazygit"
 brew "lazydocker"
@@ -61,7 +62,8 @@ brew "ffmpeg"        # Media processing
 
 # Cloud & infrastructure
 brew "awscli"
-brew "terraform"
+tap "hashicorp/tap"
+brew "hashicorp/tap/terraform"   # terraform left homebrew-core (BUSL); now from hashicorp/tap
 
 # System tools
 brew "htop"

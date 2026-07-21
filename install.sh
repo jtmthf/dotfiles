@@ -111,6 +111,17 @@ install_packages() {
     fi
     log_info "Installing packages from Brewfile..."
     if [[ -f "$DOTFILES_DIR/Brewfile" ]]; then
+        # Homebrew refuses to load formulae from untrusted third-party taps, which
+        # aborts the whole bundle. Trust the taps the Brewfile declares so the
+        # install runs unattended. (Guarded: `brew trust` is a newer subcommand.)
+        if brew commands 2>/dev/null | grep -qx trust; then
+            local tap
+            while IFS= read -r tap; do
+                [[ -n "$tap" ]] || continue
+                run brew tap "$tap" || true
+                run brew trust "$tap" || true
+            done < <(grep -E '^[[:space:]]*tap[[:space:]]+"' "$DOTFILES_DIR/Brewfile" | sed -E 's/.*"([^"]+)".*/\1/')
+        fi
         run brew bundle --file="$DOTFILES_DIR/Brewfile"
         log_success "Packages installed"
     else
@@ -157,6 +168,21 @@ setup_tmux() {
     fi
 
     log_success "tmux config setup complete"
+}
+
+# Setup cw (worktree-backed tmux/Claude sessions). Make the scripts and hooks
+# executable; the `cw` shell function invokes them by path (no PATH entry needed).
+setup_cw() {
+    log_info "Setting up cw (worktree sessions)..."
+
+    run chmod +x "$DOTFILES_DIR/scripts/cw/cw" "$DOTFILES_DIR/scripts/cw/cw-lib.sh"
+    [[ -f "$DOTFILES_DIR/scripts/cw/cw-dashboard.sh" ]] && run chmod +x "$DOTFILES_DIR/scripts/cw/cw-dashboard.sh"
+    # Claude hooks (the "agent is waiting" markers) live alongside cw; make any present ones executable.
+    if compgen -G "$DOTFILES_DIR/scripts/cw/hooks/*.sh" > /dev/null; then
+        run chmod +x "$DOTFILES_DIR"/scripts/cw/hooks/*.sh
+    fi
+
+    log_success "cw setup complete"
 }
 
 # Merge the repo's Claude settings.json into ~/.claude/settings.json non-destructively.
@@ -233,7 +259,7 @@ create_symlinks() {
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY RUN] Would write $HOME/.zshenv"
         log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, ghostty/config, opencode/, and git/config; prepend Include to ~/.ssh/config"
+        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, ghostty/config, sesh/sesh.toml, opencode/, and git/config; prepend Include to ~/.ssh/config"
         log_info "[DRY RUN] Would write $HOME/.ssh/config.local with platform IdentityAgent"
     else
         cat > "$HOME/.zshenv" << 'ZSHENV'
@@ -259,6 +285,10 @@ ZSHENV
         # Ghostty config
         mkdir -p "$HOME/.config/ghostty"
         ln -sf "$DOTFILES_DIR/config/ghostty/config" "$HOME/.config/ghostty/config"
+
+        # Sesh config (tmux session manager)
+        mkdir -p "$HOME/.config/sesh"
+        ln -sf "$DOTFILES_DIR/config/sesh/sesh.toml" "$HOME/.config/sesh/sesh.toml"
 
         # OpenCode config
         mkdir -p "$HOME/.config"
@@ -490,6 +520,7 @@ rollback() {
     rm -f "$HOME/.config/zsh/.zshenv" "$HOME/.config/zsh/.zprofile" "$HOME/.config/zsh/.zshrc"
     rm -f "$HOME/.config/starship.toml" "$HOME/.config/mise/config.toml"
     rm -f "$HOME/.config/ghostty/config"
+    rm -f "$HOME/.config/sesh/sesh.toml"
     rm -f "$HOME/.config/opencode"
     rm -f "$HOME/.config/tmux/tmux.conf"
     rm -rf "$HOME/.config/tmux/plugins/tpm"
@@ -547,6 +578,7 @@ main() {
     setup_zsh_plugins
     create_symlinks
     setup_tmux
+    setup_cw
     setup_claude
     setup_playwright_cli
     setup_zed

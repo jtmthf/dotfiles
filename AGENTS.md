@@ -22,6 +22,13 @@ brew bundle --file=./Brewfile
 
 # Profile zsh startup time
 time zsh -i -c exit
+
+# Worktree-backed tmux/Claude sessions (see docs/worktrees.md)
+cw <branch> [note]   # create/attach a worktree + session for a branch
+cw c                 # spawn another Claude session in the current worktree
+cw ls                # list tracked worktrees
+cw board             # dashboard popup (also prefix + w)
+cw rm <branch>       # remove worktree, kill session, forget it
 ```
 
 ## Conventions
@@ -35,4 +42,5 @@ time zsh -i -c exit
 ## Deep Dive
 
 - [Architecture](docs/architecture.md) — zsh load order, symlink layout, shared utilities
+- [Worktrees](docs/worktrees.md) — the `cw` workflow (worktree ↔ tmux session ↔ Claude sessions), dashboard, sesh
 - [Maintenance](docs/maintenance.md) — scheduled cleanup jobs (node_modules, worktrees, caches, trash)
