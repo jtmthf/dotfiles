@@ -65,6 +65,15 @@ assert_cmd() {
     fi
 }
 
+assert_json_has() {
+    local desc="$1" path="$2" filter="$3"
+    if jq -e "$filter" "$path" >/dev/null 2>&1; then
+        pass "$desc"
+    else
+        fail "$desc — jq filter '$filter' did not match in $path"
+    fi
+}
+
 echo "=== Dotfiles verification ==="
 echo "DOTFILES_DIR=$DOTFILES_DIR"
 echo "HOME=$HOME"
@@ -87,9 +96,17 @@ assert_symlink "mise/config.toml symlink"     "$HOME/.config/mise/config.toml"  
 assert_symlink "tmux/tmux.conf symlink"       "$HOME/.config/tmux/tmux.conf"        "$DOTFILES_DIR/config/tmux/tmux.conf"
 assert_symlink "git/config symlink"           "$HOME/.config/git/config"            "$DOTFILES_DIR/config/git/config"
 assert_symlink "git/ignore symlink"           "$HOME/.config/git/ignore"            "$DOTFILES_DIR/config/git/ignore"
-assert_symlink "claude/settings.json symlink" "$HOME/.claude/settings.json"         "$DOTFILES_DIR/config/claude/settings.json"
+if [[ -f "$HOME/.claude/settings.json" && ! -L "$HOME/.claude/settings.json" ]]; then
+    pass "claude/settings.json is a real merged file"
+else
+    fail "claude/settings.json missing or is a symlink: $HOME/.claude/settings.json"
+fi
+assert_json_has "claude/settings.json is valid JSON"            "$HOME/.claude/settings.json" "."
+assert_json_has "claude/settings.json contains repo permission" "$HOME/.claude/settings.json" '.permissions.allow | index("Bash(rg:*)")'
 assert_symlink "claude/CLAUDE.md symlink"     "$HOME/.claude/CLAUDE.md"             "$DOTFILES_DIR/config/claude/CLAUDE.md"
 assert_symlink "claude/TMUX.md symlink"       "$HOME/.claude/TMUX.md"               "$DOTFILES_DIR/config/claude/TMUX.md"
+assert_symlink "claude/SEARCH.md symlink"     "$HOME/.claude/SEARCH.md"             "$DOTFILES_DIR/config/claude/SEARCH.md"
+assert_symlink "claude/WEB.md symlink"        "$HOME/.claude/WEB.md"                "$DOTFILES_DIR/config/claude/WEB.md"
 
 # 3. Written files (not symlinks)
 echo ""

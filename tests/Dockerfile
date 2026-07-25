@@ -1,7 +1,7 @@
 FROM ghcr.io/homebrew/brew:latest
 
 USER root
-RUN apt-get update && apt-get install -y zsh git curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y zsh git curl jq && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=linuxbrew:linuxbrew . /home/linuxbrew/.dotfiles
 
