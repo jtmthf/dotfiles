@@ -117,6 +117,18 @@ if command -v mise &> /dev/null; then
 fi
 
 # Initialize modern tools (lazy loading where possible)
+# HOMEBREW_PREFIX is exported by .zprofile in login shells; derive it statically
+# (no subshell) for non-login interactive shells so brew-installed plugins load.
+if [[ -z "${HOMEBREW_PREFIX:-}" ]]; then
+    if [[ -d /opt/homebrew/bin ]]; then
+        export HOMEBREW_PREFIX=/opt/homebrew
+    elif [[ -d /home/linuxbrew/.linuxbrew/bin ]]; then
+        export HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew
+    elif [[ -x /usr/local/bin/brew ]]; then
+        export HOMEBREW_PREFIX=/usr/local
+    fi
+fi
+
 # Starship prompt (fast, so load immediately)
 if command -v starship &> /dev/null; then
     eval "$(starship init zsh)"
@@ -159,8 +171,8 @@ if [[ -f "$PLUGINS_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
 fi
 
 # zsh-history-substring-search
-if [[ -f "$(brew --prefix)/share/zsh-history-substring-search/zsh-history-substring-search.zsh" ]]; then
-    source "$(brew --prefix)/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
+if [[ -n "${HOMEBREW_PREFIX:-}" && -f "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh" ]]; then
+    source "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
     bindkey -e
     bindkey '^[[A' history-substring-search-up
     bindkey '^[[B' history-substring-search-down  

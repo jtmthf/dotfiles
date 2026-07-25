@@ -72,11 +72,11 @@ Runs once per session. This is where expensive operations live.
 
 **First-time setup.** On initial login, creates `~/Development` and `~/Projects`, prints an SSH key reminder if none exists, then writes a marker file so the checks do not repeat.
 
-**Brew prefix cache.** Caches the output of `brew --prefix` to `$XDG_CACHE_HOME/zsh/brew_prefix`, invalidating only when the brew binary changes. This avoids a slow subprocess call on every login.
+**Homebrew prefix.** Login shells get `HOMEBREW_PREFIX` from `brew shellenv` in `.zprofile`. Non-login interactive shells derive it in `.zshrc` from the standard install locations (`/opt/homebrew`, `/usr/local`, `/home/linuxbrew/.linuxbrew`) without spawning a subprocess, so brew-installed plugins (fzf bindings, history-substring-search) load in every interactive shell.
 
 ### 3. `.zshrc` -- Interactive Shell
 
-Everything the user sees and interacts with. Starts with an early exit guard (`[[ $- != *i* ]] && return`).
+Everything the user sees and interacts with. Zsh sources `.zshrc` only for interactive shells, so no explicit guard is needed.
 
 ## Shell Options
 

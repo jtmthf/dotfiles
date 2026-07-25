@@ -102,6 +102,14 @@ qr() {
 # Docker cleanup functions
 docker-cleanup() {
     echo "Cleaning up Docker..."
+    echo "WARNING: This will remove unused containers, networks, images, and build cache."
+    echo "Use docker-cleanup-full to also prune volumes."
+    docker system prune -af
+}
+
+docker-cleanup-full() {
+    echo "Full Docker cleanup including volumes..."
+    echo "WARNING: This will remove all unused volumes — check docker volume ls first."
     docker system prune -af --volumes
     docker image prune -af
 }
@@ -117,7 +125,13 @@ docker-rm-all() {
 # Git functions
 git-cleanup() {
     echo "Cleaning up Git repository..."
-    git branch --merged | grep -v "\*\|main\|master\|develop" | xargs -n 1 git branch -d
+    local merged
+    merged=$(git branch --merged | grep -v -E '^\*|^  (main|master|develop)$' || true)
+    if [[ -n "$merged" ]]; then
+        echo "$merged" | xargs -n 1 git branch -d
+    else
+        echo "No merged branches to clean up."
+    fi
     git remote prune origin
     git gc --prune=now
 }
@@ -194,7 +208,14 @@ port-kill() {
         return 1
     fi
     
-    lsof -ti ":$1" | xargs kill -9
+    local pids
+    pids=$(lsof -ti ":$1" 2>/dev/null) || true
+    if [[ -z "$pids" ]]; then
+        echo "No process found on port $1"
+        return 1
+    fi
+    echo "$pids" | xargs kill -9
+    echo "Killed process(es) on port $1"
 }
 
 # System information

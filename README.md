@@ -35,7 +35,7 @@ A modern, fast, and comprehensive dotfiles setup optimized for macOS and Linux (
 ## Quick Start
 
 ```bash
-git clone https://github.com/yourusername/dotfiles.git ~/.dotfiles
+git clone https://github.com/jtmthf/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 ./install.sh
 ```
@@ -106,8 +106,9 @@ cd ~/.dotfiles
 │   └── ssh/
 │       └── config          # SSH configuration
 └── scripts/
-    ├── setup-services.sh   # Redis/Postgres setup
-    └── setup-colima.sh     # Colima container setup
+    ├── setup-services.zsh  # Redis/Postgres setup
+    ├── setup-colima.zsh    # Colima container setup
+    └── test-docker.sh      # Docker-based CI test runner
 ```
 
 ## Key Commands
@@ -201,7 +202,7 @@ Optimized for speed with useful information:
 
 - PostgreSQL running on port 5432
 - Redis running on port 6379
-- Both configured to start automatically
+- Start manually with: `zsh scripts/setup-services.zsh`
 
 ## Customization
 
@@ -244,9 +245,11 @@ time zsh -i -c exit
 
 ### Plugin Issues
 
+Plugins are cloned with `git clone` by `install.sh`, not managed as submodules.
+
 ```bash
 # Update plugins
-cd ~/.dotfiles && git submodule update --remote
+cd ~/.dotfiles && for dir in zsh/plugins/*/; do (cd "$dir" && git pull); done
 
 # Reinstall plugins
 rm -rf ~/.dotfiles/zsh/plugins/*
@@ -260,7 +263,7 @@ rm -rf ~/.dotfiles/zsh/plugins/*
 brew services list
 
 # Restart services
-brew services restart postgresql@14
+brew services restart postgresql@17
 brew services restart redis
 ```
 

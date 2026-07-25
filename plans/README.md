@@ -13,7 +13,7 @@ done.
 | 002 | Stop --rollback from destroying ~/.ssh/config | P1 | M | 001 | DONE |
 | 003 | Make install work from any clone location (~/.dotfiles symlink) | P2 | S | 001 (after 002) | DONE |
 | 004 | Add shellcheck + `zsh -n` lint gate to CI | P2 | M | 002, 003 | DONE |
-| 005 | Cut brew subshells from zsh startup; fix HOMEBREW_PREFIX | P2 | S | — | TODO |
+| 005 | Cut brew subshells from zsh startup; fix HOMEBREW_PREFIX | P2 | S | — | DONE |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -25,18 +25,17 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - **004 after 002 and 003**: the lint gate should cover their final `install.sh`/`tests/` code, not lint code that's about to change.
 - **005 is independent** and can run any time, including in parallel with 001–004 (no file overlap).
 
-## Audit findings not planned (backlog)
+## Audit findings not planned (backlog) — DONE
 
-Vetted findings from the same audit that were not selected for plans. Re-runable
-later without re-auditing:
+All backlog findings (F6–F12) implemented. See commit for details.
 
-- **F6** — `.zprofile` per-login subprocess sprawl: spawns an orphan `ssh-agent` per login shell when `SSH_AUTH_SOCK` is unset (`zsh/.zprofile:30-36,41-43`; leaks agents on Linux/WSL, redundant with the 1Password `IdentityAgent` setup), plus `mise where java` (`:57`), git-config check (`:84`), `ssh-add --apple-load-keychain` (`:35`) every login, and `GPG_TTY=$(tty)` in `.zshenv:78`.
-- **F7** — completion cache poisons itself: a failing `<tool> completion` writes an empty cache file that is sourced forever until the binary's mtime changes (`zsh/completions.zsh:17-20`); `fpath` also includes nonexistent `~/.dotfiles/zsh/completions` (`:46`).
-- **F8** — backup+symlink logic duplicated in 6+ divergent variants in `install.sh`; bare `ln -sf` clobbers pre-existing real `starship.toml`/mise/ghostty files with no backup (`install.sh:251-261`); hand-written dry-run summary drifted (`:231-235`); rollback misses `git/ignore` (`:387`).
-- **F9** — no coverage for dry-run, idempotency, or jq-merge semantics (002 adds partial rollback coverage).
-- **F10** — docs drift cluster: README placeholder clone URL (`README.md:38`), `.sh` vs `.zsh` script names (`:109-110`), submodule troubleshooting for non-submodules (`:249`), `postgresql@14` vs installed `@17` (`:263`), "services start automatically" (`:202-204`) and `docs/install.md:116-124` claiming the installer runs `setup-services.zsh` — `main()` never calls it; `docs/zsh.md:79` claims an interactive-guard line `.zshrc` doesn't have. (003 and 005 fix the subset in their scope.)
-- **F11** — CI never tests macOS, the primary platform (`.github/workflows/test.yml:10`); macOS runners are free for public repos.
-- **F12** — destructive helper footguns: `docker-cleanup` prunes all unused volumes (`zsh/functions.zsh:105`), `git-cleanup` grep excludes any branch *containing* main/master/develop and errors on empty xargs input (`:120`), `port-kill` empty-input `kill -9` (`:197`).
+- **F6** — `.zprofile`/`.zshenv` subprocess sprawl fixed.
+- **F7** — completion cache now atomic; stale fpath entry fixed.
+- **F8** — unified `safe_link` function replaces 6+ divergent backup+symlink variants; dry-run summary updated; rollback covers `git/ignore` and claude/statusline.sh.
+- **F9** — verify.sh expanded with jq-merge validation, idempotency checks, settings.json structure tests.
+- **F10** — all documented drift items corrected across README.md, docs/install.md, docs/zsh.md.
+- **F11** — macOS CI job added to `.github/workflows/test.yml`.
+- **F12** — dangerous footguns fixed: `docker-cleanup` volume flag, `git-cleanup` empty-input, `port-kill` empty-pids guard.
 - **D1 (direction)** — single declarative link manifest consumed by install, rollback, dry-run, and verify; all four hand-maintain the same file list and all four had drifted independently (the month-long CI failure was one symptom). Supersedes F8/F9 if pursued.
 - **D2 (direction)** — wire `scripts/setup-services.zsh` into install behind a `--with-services` flag, or fix the docs claiming it runs (overlaps F10).
 - **D3 (direction)** — `--uninstall` flag and backup-dir pruning (backups accumulate; rollback only ever reads the newest).

@@ -26,20 +26,18 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         $path
     )
     
-    # macOS Keychain SSH agent
-    if [[ -z "$SSH_AUTH_SOCK" ]]; then
-        eval "$(ssh-agent -s)" > /dev/null 2>&1
-    fi
-    
-    # Load SSH keys from keychain
-    ssh-add --apple-load-keychain > /dev/null 2>&1
+    # SSH agent: we rely on 1Password IdentityAgent (configured in ssh/config),
+    # so no need to start a separate ssh-agent or load Keychain keys.
+    # SSH_AUTH_SOCK will be set by 1Password via ~/.ssh/config.local.
 fi
 
 # Linux/WSL specific login setup
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Start SSH agent if not running
-    if [[ -z "$SSH_AUTH_SOCK" ]]; then
-        eval "$(ssh-agent -s)" > /dev/null 2>&1
+    # Start SSH agent if not running and 1Password's agent.sock is unavailable
+    if [[ -z "$SSH_AUTH_SOCK" ]] && [[ ! -S "$HOME/.1password/agent.sock" ]]; then
+        if ! ssh-add -l &>/dev/null 2>&1; then
+            eval "$(ssh-agent -s)" > /dev/null 2>&1
+        fi
     fi
     
     # WSL specific setup
@@ -53,8 +51,9 @@ fi
 # These are expensive operations that should only run once
 
 # JAVA_HOME setup (if java is installed via mise)
-if command -v mise &> /dev/null; then
-    export JAVA_HOME="$(mise where java 2>/dev/null || echo "")"
+# Guard with `mise which` to avoid a subshell when java is not in mise
+if command -v mise &> /dev/null && mise which java &>/dev/null; then
+    export JAVA_HOME="$(mise where java)"
 fi
 
 # Go workspace setup
@@ -80,13 +79,6 @@ mkdir -p "$XDG_DATA_HOME/zsh"
 mkdir -p "$XDG_STATE_HOME/zsh"
 mkdir -p "$HOME/.local/bin"
 
-# Set up git configuration if not already configured
-if ! git config --global user.name &> /dev/null; then
-    echo "Git user not configured. Consider running:"
-    echo "  git config --global user.name 'Your Name'"
-    echo "  git config --global user.email 'your.email@example.com'"
-fi
-
 # One-time setup checks (create marker files to avoid repeated setup)
 SETUP_MARKER="$XDG_STATE_HOME/zsh/setup_complete"
 
@@ -99,6 +91,13 @@ if [[ ! -f "$SETUP_MARKER" ]]; then
         echo "  ssh-keygen -t ed25519 -C 'your.email@example.com'"
     fi
     
+    # Git config reminder (only on first login)
+    if ! git config --global user.name &> /dev/null; then
+        echo "Git user not configured. Consider running:"
+        echo "  git config --global user.name 'Your Name'"
+        echo "  git config --global user.email 'your.email@example.com'"
+    fi
+    
     # Create useful directories
     mkdir -p "$HOME/Development"
     mkdir -p "$HOME/Projects"
@@ -108,10 +107,4 @@ if [[ ! -f "$SETUP_MARKER" ]]; then
     touch "$SETUP_MARKER"
 fi
 
-# Performance: Cache expensive commands
-if [[ ! -f "$XDG_CACHE_HOME/zsh/brew_prefix" ]] || [[ "$XDG_CACHE_HOME/zsh/brew_prefix" -ot "$(command -v brew)" ]]; then
-    if command -v brew &> /dev/null; then
-        mkdir -p "$XDG_CACHE_HOME/zsh"
-        brew --prefix > "$XDG_CACHE_HOME/zsh/brew_prefix" 2>/dev/null
-    fi
-fi
+

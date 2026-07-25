@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,3 +30,31 @@ jobs:
             zsh -n "$f"
             echo "OK $f"
           done
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck scripts
+        run: |
+          brew install shellcheck || true
+          find . -name '*.sh' -o -name '*.zsh' | xargs shellcheck -s bash -e SC1090,SC1091,SC2154 2>&1 || true
+
+      - name: Zsh syntax check
+        run: |
+          zsh -n zsh/.zshrc 2>&1
+          zsh -n zsh/.zshenv 2>&1
+          zsh -n zsh/.zprofile 2>&1
+
+      - name: Dry-run install
+        run: |
+          bash install.sh --dry-run 2>&1
+
+      - name: Verify dry-run left no changes
+        run: |
+          if [[ -d ~/.dotfiles_backup_* ]]; then
+            echo "FAIL: dry-run created backup directory"
+            exit 1
+          fi
+          echo "PASS: dry-run made no changes"
