@@ -7,6 +7,8 @@ mkdir -p "$_comp_cache"
 
 # Helper: generate and cache a completion file if stale
 # Usage: _cache_completion <name> <binary> <gen_command...>
+# The cache is written atomically: a failing completion command does not poison
+# the cache file with empty/stale contents.
 _cache_completion() {
     local name="$1" bin="$2"; shift 2
     local cache_file="$_comp_cache/_$name"
@@ -15,9 +17,16 @@ _cache_completion() {
     [[ -z "$bin_path" ]] && return
 
     if [[ ! -f "$cache_file" ]] || [[ "$bin_path" -nt "$cache_file" ]]; then
-        "$@" > "$cache_file" 2>/dev/null
+        local tmp="${cache_file}.tmp.$$"
+        if "$@" > "$tmp" 2>/dev/null && [[ -s "$tmp" ]]; then
+            mv "$tmp" "$cache_file"
+        else
+            rm -f "$tmp"
+            # Keep stale cache if regeneration failed
+        fi
     fi
-    source "$cache_file"
+    # Source the cache file only if it exists and is non-empty
+    [[ -s "$cache_file" ]] && source "$cache_file"
 }
 
 # GitHub CLI completion
@@ -42,8 +51,9 @@ fi
 # Mise completion
 _cache_completion mise mise mise completion zsh
 
-# Add custom completion directory to fpath
-fpath=(~/.dotfiles/zsh/completions $fpath)
+# Add local completions directory to fpath if it exists
+local _local_completions="${DOTFILES_DIR:-$HOME/.dotfiles}/zsh/completions"
+[[ -d "$_local_completions" ]] && fpath=("$_local_completions" $fpath)
 
 # Custom completions for our functions
 _extract() {

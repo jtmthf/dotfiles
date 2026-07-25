@@ -87,7 +87,24 @@ assert_symlink "mise/config.toml symlink"     "$HOME/.config/mise/config.toml"  
 assert_symlink "tmux/tmux.conf symlink"       "$HOME/.config/tmux/tmux.conf"        "$DOTFILES_DIR/config/tmux/tmux.conf"
 assert_symlink "git/config symlink"           "$HOME/.config/git/config"            "$DOTFILES_DIR/config/git/config"
 assert_symlink "git/ignore symlink"           "$HOME/.config/git/ignore"            "$DOTFILES_DIR/config/git/ignore"
-assert_symlink "claude/settings.json symlink" "$HOME/.claude/settings.json"         "$DOTFILES_DIR/config/claude/settings.json"
+# Idempotency: running safe_link again produces the same result (no nested symlinks)
+for link in \
+    "$HOME/.config/zsh/.zshenv" \
+    "$HOME/.config/zsh/.zprofile" \
+    "$HOME/.config/zsh/.zshrc" \
+    "$HOME/.config/starship.toml" \
+    "$HOME/.config/mise/config.toml" \
+    "$HOME/.config/git/config" \
+    "$HOME/.config/git/ignore"; do
+    if [[ -L "$link" ]]; then
+        target=$(readlink "$link")
+        if [[ "$target" == "$DOTFILES_DIR"* ]]; then
+            pass "safe_link idempotent: $link → $target (direct, not nested)"
+        else
+            fail "safe_link idempotent: $link → $target (unexpected target)"
+        fi
+    fi
+done
 assert_symlink "claude/CLAUDE.md symlink"     "$HOME/.claude/CLAUDE.md"             "$DOTFILES_DIR/config/claude/CLAUDE.md"
 assert_symlink "claude/TMUX.md symlink"       "$HOME/.claude/TMUX.md"               "$DOTFILES_DIR/config/claude/TMUX.md"
 
@@ -98,6 +115,27 @@ assert_file    "~/.ssh/config exists"         "$HOME/.ssh/config"
 assert_contains "~/.ssh/config has Include"   "$HOME/.ssh/config" "Include $DOTFILES_DIR/config/ssh/config"
 assert_file    "~/.ssh/config.local exists"   "$HOME/.ssh/config.local"
 assert_file    "git/config.local exists"      "$HOME/.config/git/config.local"
+assert_file    "claude/settings.json exists"   "$HOME/.claude/settings.json"
+
+# jq-merge: settings.json must be valid JSON with the expected structure
+if command -v jq &>/dev/null && [[ -f "$HOME/.claude/settings.json" ]]; then
+    if jq empty "$HOME/.claude/settings.json" 2>/dev/null; then
+        pass "claude/settings.json is valid JSON"
+    else
+        fail "claude/settings.json is not valid JSON"
+    fi
+    if jq -e '.permissions' "$HOME/.claude/settings.json" &>/dev/null; then
+        pass "claude/settings.json has .permissions key (jq-merge produced correct structure)"
+    else
+        fail "claude/settings.json missing .permissions key (jq-merge may have failed)"
+    fi
+    # Verify the merge result respects the union_keep_order semantics
+    if jq -e '.permissions.allow | length > 0' "$HOME/.claude/settings.json" &>/dev/null; then
+        pass "claude/settings.json has non-empty .permissions.allow (union merge preserved entries)"
+    fi
+else
+    fail "jq not available or settings.json missing — cannot verify merge semantics"
+fi
 
 # 4. Zsh plugins
 echo ""

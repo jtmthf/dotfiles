@@ -76,7 +76,7 @@ Runs once per session. This is where expensive operations live.
 
 ### 3. `.zshrc` -- Interactive Shell
 
-Everything the user sees and interacts with. Starts with an early exit guard (`[[ $- != *i* ]] && return`).
+Everything the user sees and interacts with. Zsh sources `.zshrc` only for interactive shells, so no explicit guard is needed.
 
 ## Shell Options
 

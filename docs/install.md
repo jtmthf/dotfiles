@@ -117,11 +117,12 @@ The installer prints a warning reminding you to do this.
 
 On macOS the installer additionally runs:
 
-- **`scripts/setup-services.zsh`** -- starts PostgreSQL and Redis via
-  Homebrew services.
 - **`scripts/setup-colima.zsh`** -- configures Docker through Colima.
 
-These steps are skipped entirely on Linux and WSL.
+PostgreSQL and Redis services are **not** started automatically. Run
+`zsh scripts/setup-services.zsh` manually after install to bring them up.
+
+Service setup is skipped entirely on Linux and WSL.
 
 ## Dry Run Mode
 

@@ -52,32 +52,24 @@ $DRY_RUN && log_warning "Dry-run mode: no changes will be made"
 # Create backup directory
 $DRY_RUN || mkdir -p "$BACKUP_DIR"
 
-# Backup existing dotfiles
-backup_file() {
-    local file="$1"
-    if [[ -f "$HOME/$file" ]] || [[ -L "$HOME/$file" ]]; then
-        log_info "Backing up existing $file"
-        run mv "$HOME/$file" "$BACKUP_DIR/"
-    fi
-}
-
-# Link a Claude Code config file with idempotency and backup.
-# Args: <dotfiles-source-path> <target-path> <backup-filename>
-link_claude_file() {
-    local src="$1"
-    local dst="$2"
-    local backup_name="$3"
+# Unified safe-link: backup existing file/dir/symlink at dst, then link src→dst.
+# Idempotent: if dst is already a symlink pointing to src, do nothing.
+# Args: <src> <dst> [backup_name]
+safe_link() {
+    local src="$1" dst="$2"
+    local backup_name="${3:-$(basename "$dst")}"
 
     if [[ -L "$dst" && "$(readlink "$dst")" == "$src" ]]; then
         log_info "Already linked: $dst"
         return
     fi
 
-    if [[ -f "$dst" || -L "$dst" ]]; then
+    if [[ -e "$dst" || -L "$dst" ]]; then
         log_info "Backing up existing $(basename "$dst")"
         run mv "$dst" "$BACKUP_DIR/$backup_name"
     fi
 
+    run mkdir -p "$(dirname "$dst")"
     run ln -sf "$src" "$dst"
 }
 
@@ -156,14 +148,12 @@ setup_zsh_plugins() {
 setup_tmux() {
     log_info "Setting up tmux config..."
 
-    local tmux_dir="$HOME/.config/tmux"
-    run mkdir -p "$tmux_dir/plugins"
-
-    run ln -sf "$DOTFILES_DIR/config/tmux/tmux.conf" "$tmux_dir/tmux.conf"
+    safe_link "$DOTFILES_DIR/config/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
+    run mkdir -p "$HOME/.config/tmux/plugins"
 
     # Bootstrap TPM. Plugins themselves install on first `prefix + I`.
-    if [[ ! -d "$tmux_dir/plugins/tpm" ]]; then
-        run git clone --depth=1 https://github.com/tmux-plugins/tpm "$tmux_dir/plugins/tpm"
+    if [[ ! -d "$HOME/.config/tmux/plugins/tpm" ]]; then
+        run git clone --depth=1 https://github.com/tmux-plugins/tpm "$HOME/.config/tmux/plugins/tpm"
         log_info "TPM installed. Open tmux, then press prefix + I to install plugins"
     fi
 
@@ -237,12 +227,12 @@ setup_claude() {
     run mkdir -p "$claude_dir"
 
     merge_claude_settings
-    link_claude_file "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
-    link_claude_file "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
-    link_claude_file "$DOTFILES_DIR/config/claude/SEARCH.md" "$claude_dir/SEARCH.md" "claude_SEARCH.md"
-    link_claude_file "$DOTFILES_DIR/config/claude/WEB.md" "$claude_dir/WEB.md" "claude_WEB.md"
+    safe_link "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
+    safe_link "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
+    safe_link "$DOTFILES_DIR/config/claude/SEARCH.md" "$claude_dir/SEARCH.md" "claude_SEARCH.md"
+    safe_link "$DOTFILES_DIR/config/claude/WEB.md" "$claude_dir/WEB.md" "claude_WEB.md"
     run chmod +x "$DOTFILES_DIR/config/claude/statusline.sh"
-    link_claude_file "$DOTFILES_DIR/config/claude/statusline.sh" "$claude_dir/statusline.sh" "claude_statusline.sh"
+    safe_link "$DOTFILES_DIR/config/claude/statusline.sh" "$claude_dir/statusline.sh" "claude_statusline.sh"
 
     log_success "Claude Code config setup complete"
 }
@@ -250,113 +240,95 @@ setup_claude() {
 # Create symlinks
 create_symlinks() {
     log_info "Creating symlinks..."
-    
-    # Backup and link zsh files
-    backup_file ".zshenv"
-    backup_file ".zprofile"
-    backup_file ".zshrc"
 
     if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY RUN] Would write $HOME/.zshenv"
-        log_info "[DRY RUN] Would create symlinks in $HOME/.config/zsh/"
-        log_info "[DRY RUN] Would link starship.toml, mise/config.toml, ghostty/config, sesh/sesh.toml, opencode/, and git/config; prepend Include to ~/.ssh/config"
-        log_info "[DRY RUN] Would write $HOME/.ssh/config.local with platform IdentityAgent"
-    else
-        cat > "$HOME/.zshenv" << 'ZSHENV'
+        log_info "[DRY RUN] Would write $HOME/.zshenv (bootstrap)"
+        log_info "[DRY RUN] Would safe_link: zsh/.zshenv, zsh/.zprofile, zsh/.zshrc"
+        log_info "[DRY RUN] Would safe_link: starship.toml, mise/config.toml, ghostty/config, sesh/sesh.toml"
+        log_info "[DRY RUN] Would safe_link: opencode/, git/config, git/ignore, zed/settings.json, gh/config.yml"
+        log_info "[DRY RUN] Would safe_link: claude/CLAUDE.md, claude/TMUX.md, claude/SEARCH.md, claude/WEB.md, claude/statusline.sh"
+        log_info "[DRY RUN] Would prepend Include to ~/.ssh/config and write ~/.ssh/config.local"
+        return
+    fi
+
+    # Bootstrap .zshenv — written, not symlinked, so zsh finds ZDOTDIR early
+    cat > "$HOME/.zshenv" << 'ZSHENV'
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:=${HOME}/.config}
 export ZDOTDIR=${ZDOTDIR:=${XDG_CONFIG_HOME}/zsh}
 source $ZDOTDIR/.zshenv
 ZSHENV
 
-        # Create config directories and symlinks
-        mkdir -p "$HOME/.config/zsh"
+    # Zsh config symlinks
+    safe_link "$DOTFILES_DIR/zsh/.zshenv" "$HOME/.config/zsh/.zshenv"
+    safe_link "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.config/zsh/.zprofile"
+    safe_link "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.config/zsh/.zshrc"
 
-        ln -sf "$DOTFILES_DIR/zsh/.zshenv" "$HOME/.config/zsh/.zshenv"
-        ln -sf "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.config/zsh/.zprofile"
-        ln -sf "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.config/zsh/.zshrc"
+    # Starship config
+    safe_link "$DOTFILES_DIR/config/starship.toml" "$HOME/.config/starship.toml"
 
-        # Starship config
-        ln -sf "$DOTFILES_DIR/config/starship.toml" "$HOME/.config/starship.toml"
+    # Mise config
+    safe_link "$DOTFILES_DIR/config/mise/config.toml" "$HOME/.config/mise/config.toml"
 
-        # Mise config
-        mkdir -p "$HOME/.config/mise"
-        ln -sf "$DOTFILES_DIR/config/mise/config.toml" "$HOME/.config/mise/config.toml"
+    # Ghostty config
+    safe_link "$DOTFILES_DIR/config/ghostty/config" "$HOME/.config/ghostty/config"
 
-        # Ghostty config
-        mkdir -p "$HOME/.config/ghostty"
-        ln -sf "$DOTFILES_DIR/config/ghostty/config" "$HOME/.config/ghostty/config"
+    # Sesh config (tmux session manager)
+    safe_link "$DOTFILES_DIR/config/sesh/sesh.toml" "$HOME/.config/sesh/sesh.toml"
 
-        # Sesh config (tmux session manager)
-        mkdir -p "$HOME/.config/sesh"
-        ln -sf "$DOTFILES_DIR/config/sesh/sesh.toml" "$HOME/.config/sesh/sesh.toml"
+    # OpenCode config (directory symlink)
+    safe_link "$DOTFILES_DIR/config/opencode" "$HOME/.config/opencode" "opencode"
 
-        # OpenCode config
-        mkdir -p "$HOME/.config"
-        [[ -d "$HOME/.config/opencode" && ! -L "$HOME/.config/opencode" ]] && run mv "$HOME/.config/opencode" "$BACKUP_DIR/opencode"
-        ln -sf "$DOTFILES_DIR/config/opencode" "$HOME/.config/opencode"
-
-        # SSH config — written as a real file (not a symlink) so tools like
-        # 1Password can append host entries without touching source-controlled files.
-        mkdir -p "$HOME/.ssh" "$HOME/.ssh/control"
-        chmod 700 "$HOME/.ssh" "$HOME/.ssh/control"
-        local ssh_include="Include $DOTFILES_DIR/config/ssh/config"
-        if [[ -L "$HOME/.ssh/config" ]]; then
-            rm -f "$HOME/.ssh/config"
-        fi
-        if [[ ! -f "$HOME/.ssh/config" ]]; then
-            printf '%s\n' "$ssh_include" > "$HOME/.ssh/config"
-            chmod 600 "$HOME/.ssh/config"
-        elif ! grep -qF "$ssh_include" "$HOME/.ssh/config"; then
-            # Real file exists (e.g. has 1Password entries) — prepend Include, preserve content
-            local tmp
-            tmp=$(mktemp)
-            { printf '%s\n' "$ssh_include"; cat "$HOME/.ssh/config"; } > "$tmp"
-            mv "$tmp" "$HOME/.ssh/config"
-            chmod 600 "$HOME/.ssh/config"
-        fi
-        # If Include is already present, leave the file untouched (idempotent)
-
-        # Write platform-specific SSH config.local (avoids exec uname per connection)
-        if [[ "$OS" == "macos" ]]; then
-            printf 'Host *\n  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"\n' > "$HOME/.ssh/config.local"
-        else
-            printf 'Host *\n  IdentityAgent "~/.1password/agent.sock"\n' > "$HOME/.ssh/config.local"
-        fi
-
-        # Ensure allowed_signers file exists for git commit verification
-        touch "$HOME/.ssh/allowed_signers"
-
-        # Git config
-        mkdir -p "$HOME/.config/git"
-        [[ -f "$HOME/.config/git/config" && ! -L "$HOME/.config/git/config" ]] && run mv "$HOME/.config/git/config" "$BACKUP_DIR/git_config"
-        ln -sf "$DOTFILES_DIR/config/git/config" "$HOME/.config/git/config"
-        ln -sf "$DOTFILES_DIR/config/git/ignore" "$HOME/.config/git/ignore"
-        # Ensure local overrides file exists (user.name, user.email, user.signingKey)
-        [[ -f "$HOME/.config/git/config.local" ]] || touch "$HOME/.config/git/config.local"
+    # SSH config — written as a real file (not a symlink) so tools like
+    # 1Password can append host entries without touching source-controlled files.
+    mkdir -p "$HOME/.ssh" "$HOME/.ssh/control"
+    chmod 700 "$HOME/.ssh" "$HOME/.ssh/control"
+    local ssh_include="Include $DOTFILES_DIR/config/ssh/config"
+    if [[ -L "$HOME/.ssh/config" ]]; then
+        rm -f "$HOME/.ssh/config"
     fi
-    
+    if [[ ! -f "$HOME/.ssh/config" ]]; then
+        printf '%s\n' "$ssh_include" > "$HOME/.ssh/config"
+        chmod 600 "$HOME/.ssh/config"
+    elif ! grep -qF "$ssh_include" "$HOME/.ssh/config"; then
+        # Real file exists (e.g. has 1Password entries) — prepend Include, preserve content
+        local tmp
+        tmp=$(mktemp)
+        { printf '%s\n' "$ssh_include"; cat "$HOME/.ssh/config"; } > "$tmp"
+        mv "$tmp" "$HOME/.ssh/config"
+        chmod 600 "$HOME/.ssh/config"
+    fi
+    # If Include is already present, leave the file untouched (idempotent)
+
+    # Write platform-specific SSH config.local (avoids exec uname per connection)
+    if [[ "$OS" == "macos" ]]; then
+        printf 'Host *\n  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"\n' > "$HOME/.ssh/config.local"
+    else
+        printf 'Host *\n  IdentityAgent "~/.1password/agent.sock"\n' > "$HOME/.ssh/config.local"
+    fi
+
+    # Ensure allowed_signers file exists for git commit verification
+    touch "$HOME/.ssh/allowed_signers"
+
+    # Git config
+    safe_link "$DOTFILES_DIR/config/git/config" "$HOME/.config/git/config" "git_config"
+    safe_link "$DOTFILES_DIR/config/git/ignore" "$HOME/.config/git/ignore" "git_ignore"
+    # Ensure local overrides file exists (user.name, user.email, user.signingKey)
+    [[ -f "$HOME/.config/git/config.local" ]] || touch "$HOME/.config/git/config.local"
+
     log_success "Symlinks created"
 }
 
 # Setup Zed config
 setup_zed() {
     log_info "Setting up Zed config..."
-    run mkdir -p "$HOME/.config/zed"
-    if [[ -f "$HOME/.config/zed/settings.json" && ! -L "$HOME/.config/zed/settings.json" ]]; then
-        run mv "$HOME/.config/zed/settings.json" "$BACKUP_DIR/zed_settings.json"
-    fi
-    run ln -sf "$DOTFILES_DIR/config/zed/settings.json" "$HOME/.config/zed/settings.json"
+    safe_link "$DOTFILES_DIR/config/zed/settings.json" "$HOME/.config/zed/settings.json" "zed_settings.json"
     log_success "Zed config setup complete"
 }
 
 # Setup gh (GitHub CLI) config
 setup_gh() {
     log_info "Setting up gh config..."
-    run mkdir -p "$HOME/.config/gh"
-    if [[ -f "$HOME/.config/gh/config.yml" && ! -L "$HOME/.config/gh/config.yml" ]]; then
-        run mv "$HOME/.config/gh/config.yml" "$BACKUP_DIR/gh_config.yml"
-    fi
-    run ln -sf "$DOTFILES_DIR/config/gh/config.yml" "$HOME/.config/gh/config.yml"
+    safe_link "$DOTFILES_DIR/config/gh/config.yml" "$HOME/.config/gh/config.yml" "gh_config.yml"
     log_success "gh config setup complete"
 }
 
@@ -528,8 +500,10 @@ rollback() {
     rm -f "$HOME/.config/gh/config.yml"
     # settings.json is a real merged file, not a symlink — leave it in place and let the pre-merge restore (below) decide
     rm -f "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md"
+    rm -f "$HOME/.claude/statusline.sh"
     rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
     rm -f "$HOME/.config/git/config"
+    rm -f "$HOME/.config/git/ignore"
 
     # Remove scheduled maintenance jobs
     if [[ "$OS" == "macos" ]]; then
@@ -555,10 +529,11 @@ rollback() {
     # Restore SSH and git configs if they were backed up
     [[ -f "$latest_backup/ssh_config" ]] && { log_info "Restoring .ssh/config"; cp "$latest_backup/ssh_config" "$HOME/.ssh/config"; }
     [[ -f "$latest_backup/git_config" ]] && { log_info "Restoring .config/git/config"; cp "$latest_backup/git_config" "$HOME/.config/git/config"; }
+    [[ -f "$latest_backup/git_ignore" ]] && { log_info "Restoring .config/git/ignore"; cp "$latest_backup/git_ignore" "$HOME/.config/git/ignore"; }
     [[ -f "$latest_backup/zed_settings.json" ]] && { log_info "Restoring .config/zed/settings.json"; mkdir -p "$HOME/.config/zed"; cp "$latest_backup/zed_settings.json" "$HOME/.config/zed/settings.json"; }
     [[ -f "$latest_backup/gh_config.yml" ]] && { log_info "Restoring .config/gh/config.yml"; mkdir -p "$HOME/.config/gh"; cp "$latest_backup/gh_config.yml" "$HOME/.config/gh/config.yml"; }
     [[ -d "$latest_backup/opencode" ]] && { log_info "Restoring .config/opencode"; rm -f "$HOME/.config/opencode"; cp -R "$latest_backup/opencode" "$HOME/.config/opencode"; }
-    [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" ]] && mkdir -p "$HOME/.claude"
+    [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" || -f "$latest_backup/claude_statusline.sh" ]] && mkdir -p "$HOME/.claude"
     [[ -f "$latest_backup/claude_settings.json.pre-merge" ]] && { log_info "Restoring .claude/settings.json (pre-merge)"; cp "$latest_backup/claude_settings.json.pre-merge" "$HOME/.claude/settings.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
     [[ -f "$latest_backup/claude_TMUX.md" ]] && { log_info "Restoring .claude/TMUX.md"; cp "$latest_backup/claude_TMUX.md" "$HOME/.claude/TMUX.md"; }
