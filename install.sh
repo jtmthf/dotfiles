@@ -81,6 +81,28 @@ link_claude_file() {
     run ln -sf "$src" "$dst"
 }
 
+# Guarantee ~/.dotfiles points at this checkout. The zsh config (aliases,
+# functions, plugin loading) resolves the repo via ~/.dotfiles, so the repo
+# may be cloned anywhere as long as this link exists.
+setup_dotfiles_link() {
+    if [[ "$DOTFILES_DIR" == "$HOME/.dotfiles" ]]; then
+        return
+    fi
+    if [[ -L "$HOME/.dotfiles" ]]; then
+        if [[ "$(readlink "$HOME/.dotfiles")" == "$DOTFILES_DIR" ]]; then
+            log_info "~/.dotfiles already links to $DOTFILES_DIR"
+            return
+        fi
+        run ln -sfn "$DOTFILES_DIR" "$HOME/.dotfiles"
+    elif [[ -e "$HOME/.dotfiles" ]]; then
+        log_error "~/.dotfiles exists and is not a symlink. Move it aside or clone the repo there directly."
+        exit 1
+    else
+        run ln -s "$DOTFILES_DIR" "$HOME/.dotfiles"
+    fi
+    log_success "Linked ~/.dotfiles -> $DOTFILES_DIR"
+}
+
 # Install Homebrew
 install_homebrew() {
     if ! command -v brew &> /dev/null; then
@@ -543,6 +565,7 @@ rollback() {
         chmod 600 "$HOME/.ssh/config"
     fi
     rm -f "$HOME/.config/git/config"
+    [[ -L "$HOME/.dotfiles" ]] && rm -f "$HOME/.dotfiles"
 
     # Remove scheduled maintenance jobs
     if [[ "$OS" == "macos" ]]; then
@@ -586,6 +609,7 @@ rollback() {
 main() {
     log_info "Starting dotfiles installation..."
     
+    setup_dotfiles_link
     install_homebrew
     install_packages
     setup_zsh_plugins

@@ -12,10 +12,14 @@ Homebrew is installed automatically if it is not already present.
 ## Quick Start
 
 ```bash
-git clone <repo-url> ~/dotfiles
-cd ~/dotfiles
+git clone https://github.com/jtmthf/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
 ./install.sh
 ```
+
+The repo can live anywhere — if it is cloned somewhere other than
+`~/.dotfiles`, the installer creates a `~/.dotfiles` symlink pointing at the
+checkout (the zsh configuration resolves the repo through that path).
 
 Preview what will happen without making changes:
 

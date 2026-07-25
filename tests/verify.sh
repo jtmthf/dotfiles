@@ -84,6 +84,11 @@ echo "--- Bootstrap ---"
 assert_file    "~/.zshenv exists"             "$HOME/.zshenv"
 assert_contains "~/.zshenv sets ZDOTDIR"      "$HOME/.zshenv" "ZDOTDIR"
 assert_contains "~/.zshenv sources .zshenv"   "$HOME/.zshenv" "source"
+if [[ "$(readlink -f "$HOME/.dotfiles")" == "$(readlink -f "$DOTFILES_DIR")" ]]; then
+    pass "~/.dotfiles resolves to the dotfiles checkout"
+else
+    fail "~/.dotfiles does not resolve to $DOTFILES_DIR"
+fi
 
 # 2. Symlinks
 echo ""
