@@ -1,0 +1,3 @@
+# Resolve `source` statements relative to the script's own directory
+source-path=SCRIPTDIR
+external-sources=true
