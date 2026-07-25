@@ -40,6 +40,7 @@ else
     fail "install lost existing config content"
 fi
 
+# shellcheck disable=SC2012  # intentional: pick newest backup dir by mtime via glob
 latest_backup=$(ls -dt "$HOME"/.dotfiles_backup_* | head -1)
 if [[ -f "$latest_backup/ssh_config" ]] && grep -qF "$MARKER" "$latest_backup/ssh_config"; then
     pass "install backed up pre-modification ssh config"

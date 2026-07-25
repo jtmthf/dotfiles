@@ -90,11 +90,13 @@ setup_dotfiles_link() {
     fi
     if [[ -L "$HOME/.dotfiles" ]]; then
         if [[ "$(readlink "$HOME/.dotfiles")" == "$DOTFILES_DIR" ]]; then
+            # shellcheck disable=SC2088  # literal description string, not path expansion
             log_info "~/.dotfiles already links to $DOTFILES_DIR"
             return
         fi
         run ln -sfn "$DOTFILES_DIR" "$HOME/.dotfiles"
     elif [[ -e "$HOME/.dotfiles" ]]; then
+        # shellcheck disable=SC2088  # literal description string, not path expansion
         log_error "~/.dotfiles exists and is not a symlink. Move it aside or clone the repo there directly."
         exit 1
     else
@@ -116,6 +118,7 @@ install_homebrew() {
             # Linux/WSL
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+            # shellcheck disable=SC2016  # intentionally write literal $() command into .profile
             echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.profile"
             eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
         fi
@@ -530,6 +533,7 @@ setup_maintenance() {
 # Rollback from most recent backup
 rollback() {
     local latest_backup
+    # shellcheck disable=SC2012  # intentional: pick newest backup dir by mtime via glob
     latest_backup=$(ls -dt "$HOME"/.dotfiles_backup_* 2>/dev/null | head -1)
 
     if [[ -z "$latest_backup" ]]; then

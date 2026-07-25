@@ -81,12 +81,17 @@ echo ""
 
 # 1. Bootstrap file
 echo "--- Bootstrap ---"
+# shellcheck disable=SC2088  # literal test description, not a path
 assert_file    "~/.zshenv exists"             "$HOME/.zshenv"
+# shellcheck disable=SC2088  # literal test description, not a path
 assert_contains "~/.zshenv sets ZDOTDIR"      "$HOME/.zshenv" "ZDOTDIR"
+# shellcheck disable=SC2088  # literal test description, not a path
 assert_contains "~/.zshenv sources .zshenv"   "$HOME/.zshenv" "source"
 if [[ "$(readlink -f "$HOME/.dotfiles")" == "$(readlink -f "$DOTFILES_DIR")" ]]; then
+    # shellcheck disable=SC2088  # literal test description, not a path
     pass "~/.dotfiles resolves to the dotfiles checkout"
 else
+    # shellcheck disable=SC2088  # literal test description, not a path
     fail "~/.dotfiles does not resolve to $DOTFILES_DIR"
 fi
 
@@ -116,8 +121,11 @@ assert_symlink "claude/WEB.md symlink"        "$HOME/.claude/WEB.md"            
 # 3. Written files (not symlinks)
 echo ""
 echo "--- Written files ---"
+# shellcheck disable=SC2088  # literal test description, not a path
 assert_file    "~/.ssh/config exists"         "$HOME/.ssh/config"
+# shellcheck disable=SC2088  # literal test description, not a path
 assert_contains "~/.ssh/config has Include"   "$HOME/.ssh/config" "Include $DOTFILES_DIR/config/ssh/config"
+# shellcheck disable=SC2088  # literal test description, not a path
 assert_file    "~/.ssh/config.local exists"   "$HOME/.ssh/config.local"
 assert_file    "git/config.local exists"      "$HOME/.config/git/config.local"
 
