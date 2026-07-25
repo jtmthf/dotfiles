@@ -108,10 +108,4 @@ if [[ ! -f "$SETUP_MARKER" ]]; then
     touch "$SETUP_MARKER"
 fi
 
-# Performance: Cache expensive commands
-if [[ ! -f "$XDG_CACHE_HOME/zsh/brew_prefix" ]] || [[ "$XDG_CACHE_HOME/zsh/brew_prefix" -ot "$(command -v brew)" ]]; then
-    if command -v brew &> /dev/null; then
-        mkdir -p "$XDG_CACHE_HOME/zsh"
-        brew --prefix > "$XDG_CACHE_HOME/zsh/brew_prefix" 2>/dev/null
-    fi
-fi
+
