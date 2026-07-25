@@ -10,4 +10,4 @@ USER linuxbrew
 ENV HOME=/home/linuxbrew \
     DOTFILES_DIR=/home/linuxbrew/.dotfiles
 
-CMD ["bash", "-c", "bash install.sh && bash tests/verify.sh"]
+CMD ["bash", "-c", "bash install.sh && bash tests/verify.sh && bash tests/verify-rollback.sh"]

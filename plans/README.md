@@ -10,7 +10,7 @@ done.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001 | Make CI green again — verify merged settings.json instead of symlink | P1 | S | — | DONE |
-| 002 | Stop --rollback from destroying ~/.ssh/config | P1 | M | 001 | TODO |
+| 002 | Stop --rollback from destroying ~/.ssh/config | P1 | M | 001 | DONE |
 | 003 | Make install work from any clone location (~/.dotfiles symlink) | P2 | S | 001 (after 002) | TODO |
 | 004 | Add shellcheck + `zsh -n` lint gate to CI | P2 | M | 002, 003 | TODO |
 | 005 | Cut brew subshells from zsh startup; fix HOMEBREW_PREFIX | P2 | S | — | TODO |

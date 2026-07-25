@@ -307,7 +307,8 @@ ZSHENV
             printf '%s\n' "$ssh_include" > "$HOME/.ssh/config"
             chmod 600 "$HOME/.ssh/config"
         elif ! grep -qF "$ssh_include" "$HOME/.ssh/config"; then
-            # Real file exists (e.g. has 1Password entries) — prepend Include, preserve content
+            # Real file exists (e.g. has 1Password entries) — back it up, prepend Include, preserve content
+            cp "$HOME/.ssh/config" "$BACKUP_DIR/ssh_config"
             local tmp
             tmp=$(mktemp)
             { printf '%s\n' "$ssh_include"; cat "$HOME/.ssh/config"; } > "$tmp"
@@ -528,7 +529,19 @@ rollback() {
     rm -f "$HOME/.config/gh/config.yml"
     # settings.json is a real merged file, not a symlink — leave it in place and let the pre-merge restore (below) decide
     rm -f "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md"
-    rm -f "$HOME/.ssh/config" "$HOME/.ssh/config.local"
+    rm -f "$HOME/.ssh/config.local"
+    local ssh_include="Include $DOTFILES_DIR/config/ssh/config"
+    if [[ -f "$latest_backup/ssh_config" ]]; then
+        # A pre-install copy exists; the restore loop below puts it back
+        rm -f "$HOME/.ssh/config"
+    elif [[ -f "$HOME/.ssh/config" ]] && grep -qF "$ssh_include" "$HOME/.ssh/config"; then
+        # No backup — surgically remove only the Include line the installer added
+        local tmp
+        tmp=$(mktemp)
+        grep -vF "$ssh_include" "$HOME/.ssh/config" > "$tmp" || true
+        mv "$tmp" "$HOME/.ssh/config"
+        chmod 600 "$HOME/.ssh/config"
+    fi
     rm -f "$HOME/.config/git/config"
 
     # Remove scheduled maintenance jobs
