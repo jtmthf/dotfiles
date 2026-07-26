@@ -256,6 +256,7 @@ setup_claude() {
     safe_link "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
     safe_link "$DOTFILES_DIR/config/claude/SEARCH.md" "$claude_dir/SEARCH.md" "claude_SEARCH.md"
     safe_link "$DOTFILES_DIR/config/claude/WEB.md" "$claude_dir/WEB.md" "claude_WEB.md"
+    safe_link "$DOTFILES_DIR/config/claude/DELEGATION.md" "$claude_dir/DELEGATION.md" "claude_DELEGATION.md"
     run chmod +x "$DOTFILES_DIR/config/claude/statusline.sh"
     safe_link "$DOTFILES_DIR/config/claude/statusline.sh" "$claude_dir/statusline.sh" "claude_statusline.sh"
 
@@ -271,7 +272,7 @@ create_symlinks() {
         log_info "[DRY RUN] Would safe_link: zsh/.zshenv, zsh/.zprofile, zsh/.zshrc"
         log_info "[DRY RUN] Would safe_link: starship.toml, mise/config.toml, ghostty/config, sesh/sesh.toml"
         log_info "[DRY RUN] Would safe_link: opencode/, git/config, git/ignore, zed/settings.json, gh/config.yml"
-        log_info "[DRY RUN] Would safe_link: claude/CLAUDE.md, claude/TMUX.md, claude/SEARCH.md, claude/WEB.md, claude/statusline.sh"
+        log_info "[DRY RUN] Would safe_link: claude/CLAUDE.md, claude/TMUX.md, claude/SEARCH.md, claude/WEB.md, claude/DELEGATION.md, claude/statusline.sh"
         log_info "[DRY RUN] Would prepend Include to ~/.ssh/config and write ~/.ssh/config.local"
         return
     fi
@@ -525,7 +526,7 @@ rollback() {
     rm -f "$HOME/.config/zed/settings.json"
     rm -f "$HOME/.config/gh/config.yml"
     # settings.json is a real merged file, not a symlink — leave it in place and let the pre-merge restore (below) decide
-    rm -f "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md"
+    rm -f "$HOME/.claude/CLAUDE.md" "$HOME/.claude/TMUX.md" "$HOME/.claude/SEARCH.md" "$HOME/.claude/WEB.md" "$HOME/.claude/DELEGATION.md"
     rm -f "$HOME/.claude/statusline.sh"
     rm -f "$HOME/.ssh/config.local"
     local ssh_include="Include $DOTFILES_DIR/config/ssh/config"
@@ -572,12 +573,13 @@ rollback() {
     [[ -f "$latest_backup/zed_settings.json" ]] && { log_info "Restoring .config/zed/settings.json"; mkdir -p "$HOME/.config/zed"; cp "$latest_backup/zed_settings.json" "$HOME/.config/zed/settings.json"; }
     [[ -f "$latest_backup/gh_config.yml" ]] && { log_info "Restoring .config/gh/config.yml"; mkdir -p "$HOME/.config/gh"; cp "$latest_backup/gh_config.yml" "$HOME/.config/gh/config.yml"; }
     [[ -d "$latest_backup/opencode" ]] && { log_info "Restoring .config/opencode"; rm -f "$HOME/.config/opencode"; cp -R "$latest_backup/opencode" "$HOME/.config/opencode"; }
-    [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" || -f "$latest_backup/claude_statusline.sh" ]] && mkdir -p "$HOME/.claude"
+    [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" || -f "$latest_backup/claude_DELEGATION.md" || -f "$latest_backup/claude_statusline.sh" ]] && mkdir -p "$HOME/.claude"
     [[ -f "$latest_backup/claude_settings.json.pre-merge" ]] && { log_info "Restoring .claude/settings.json (pre-merge)"; cp "$latest_backup/claude_settings.json.pre-merge" "$HOME/.claude/settings.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
     [[ -f "$latest_backup/claude_TMUX.md" ]] && { log_info "Restoring .claude/TMUX.md"; cp "$latest_backup/claude_TMUX.md" "$HOME/.claude/TMUX.md"; }
     [[ -f "$latest_backup/claude_SEARCH.md" ]] && { log_info "Restoring .claude/SEARCH.md"; cp "$latest_backup/claude_SEARCH.md" "$HOME/.claude/SEARCH.md"; }
     [[ -f "$latest_backup/claude_WEB.md" ]] && { log_info "Restoring .claude/WEB.md"; cp "$latest_backup/claude_WEB.md" "$HOME/.claude/WEB.md"; }
+    [[ -f "$latest_backup/claude_DELEGATION.md" ]] && { log_info "Restoring .claude/DELEGATION.md"; cp "$latest_backup/claude_DELEGATION.md" "$HOME/.claude/DELEGATION.md"; }
 
     log_success "Rollback complete from $latest_backup"
     log_info "Please restart your terminal"

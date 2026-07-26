@@ -136,6 +136,7 @@ assert_symlink "claude/CLAUDE.md symlink"     "$HOME/.claude/CLAUDE.md"         
 assert_symlink "claude/TMUX.md symlink"       "$HOME/.claude/TMUX.md"               "$DOTFILES_DIR/config/claude/TMUX.md"
 assert_symlink "claude/SEARCH.md symlink"     "$HOME/.claude/SEARCH.md"             "$DOTFILES_DIR/config/claude/SEARCH.md"
 assert_symlink "claude/WEB.md symlink"        "$HOME/.claude/WEB.md"                "$DOTFILES_DIR/config/claude/WEB.md"
+assert_symlink "claude/DELEGATION.md symlink" "$HOME/.claude/DELEGATION.md"         "$DOTFILES_DIR/config/claude/DELEGATION.md"
 
 # 3. Written files (not symlinks)
 echo ""
