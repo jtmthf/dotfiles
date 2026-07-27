@@ -71,6 +71,7 @@
       "description": "Default execution subagent for bash commands, tests, builds, and validation",
       "model": "opencode-go/deepseek-v4-flash",
       "mode": "subagent",
+      "temperature": 0.2,
       "prompt": "{file:./prompts/executor-guideline.md}"
     },
   },
