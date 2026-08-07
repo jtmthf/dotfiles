@@ -252,11 +252,6 @@ setup_claude() {
     run mkdir -p "$claude_dir"
 
     merge_claude_settings
-    safe_link "$DOTFILES_DIR/config/claude/CLAUDE.md" "$claude_dir/CLAUDE.md" "claude_CLAUDE.md"
-    safe_link "$DOTFILES_DIR/config/claude/TMUX.md" "$claude_dir/TMUX.md" "claude_TMUX.md"
-    safe_link "$DOTFILES_DIR/config/claude/SEARCH.md" "$claude_dir/SEARCH.md" "claude_SEARCH.md"
-    safe_link "$DOTFILES_DIR/config/claude/WEB.md" "$claude_dir/WEB.md" "claude_WEB.md"
-    safe_link "$DOTFILES_DIR/config/claude/DELEGATION.md" "$claude_dir/DELEGATION.md" "claude_DELEGATION.md"
     run chmod +x "$DOTFILES_DIR/config/claude/statusline.sh"
     safe_link "$DOTFILES_DIR/config/claude/statusline.sh" "$claude_dir/statusline.sh" "claude_statusline.sh"
 

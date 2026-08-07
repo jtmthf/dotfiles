@@ -1,7 +1,4 @@
 {
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
   "permissions": {
     "allow": [
       "Bash(ls:*)",
@@ -20,7 +17,6 @@
       "Bash(df:*)",
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "Bash(grepai:*)",
       "Bash(jq:*)",
       "Bash(yq:*)",
       "Bash(sort:*)",
@@ -86,44 +82,8 @@
       "Bash(tmux new-window:*)",
       "Bash(tmux rename-window:*)",
       "Bash(crwl:*)",
-      "Bash(sg:*)",
       "Bash(pnpm typecheck:*)",
-      "Bash(pnpm lint:*)",
-      "mcp__plugin_serena_serena__find_symbol",
-      "mcp__plugin_serena_serena__find_declaration",
-      "mcp__plugin_serena_serena__find_implementations",
-      "mcp__plugin_serena_serena__find_referencing_symbols",
-      "mcp__plugin_serena_serena__find_file",
-      "mcp__plugin_serena_serena__get_symbols_overview",
-      "mcp__plugin_serena_serena__get_diagnostics_for_file",
-      "mcp__plugin_serena_serena__get_current_config",
-      "mcp__plugin_serena_serena__search_for_pattern",
-      "mcp__plugin_serena_serena__list_dir",
-      "mcp__plugin_serena_serena__read_file",
-      "mcp__plugin_serena_serena__list_memories",
-      "mcp__plugin_serena_serena__read_memory",
-      "mcp__plugin_serena_serena__check_onboarding_performed",
-      "mcp__plugin_serena_serena__initial_instructions",
-      "mcp__plugin_serena_serena__activate_project",
-      "mcp__serena__find_symbol",
-      "mcp__serena__find_referencing_symbols",
-      "mcp__serena__find_file",
-      "mcp__serena__get_symbols_overview",
-      "mcp__serena__search_for_pattern",
-      "mcp__serena__list_dir",
-      "mcp__serena__read_file",
-      "mcp__serena__list_memories",
-      "mcp__serena__read_memory",
-      "mcp__serena__check_onboarding_performed",
-      "mcp__serena__initial_instructions",
-      "mcp__serena__activate_project"
-    ],
-    "deny": [
-      "Bash(tmux kill-server:*)",
-      "Bash(tmux kill-session:*)",
-      "Bash(tmux kill-window:*)",
-      "Bash(tmux kill-pane:*)",
-      "Bash(tmux source-file:*)"
+      "Bash(pnpm lint:*)"
     ]
   },
   "hooks": {
@@ -148,21 +108,6 @@
       }
     ]
   },
-  "enabledPlugins": {
-    "skill-creator@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "voice-writer@jtmthf-skills": true,
-    "typescript-lsp@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "ast-grep@ast-grep-marketplace": true,
-    "serena@claude-plugins-official": true,
-    "agents-md@jtmthf-skills": true,
-    "data-modeler@jtmthf-skills": true,
-    "test-writer@jtmthf-skills": true
-  },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
       "source": {
@@ -174,12 +119,6 @@
       "source": {
         "source": "github",
         "repo": "jtmthf/skills"
-      }
-    },
-    "ast-grep-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "ast-grep/agent-skill"
       }
     },
     "hooksmith": {
@@ -198,27 +137,5 @@
   "model": "opus",
   "effortLevel": "high",
   "tui": "fullscreen",
-  "teammateMode": "tmux",
-  "mcpServers": {
-    "ast-grep": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/ast-grep/ast-grep-mcp",
-        "ast-grep-server"
-      ]
-    },
-    "serena": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--context",
-        "claude-code",
-        "--project-from-cwd"
-      ]
-    }
-  }
+  "teammateMode": "tmux"
 }

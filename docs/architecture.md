@@ -26,10 +26,6 @@ The installer symlinks into `~/.config/` via a bootstrap `~/.zshenv` that sets `
 - `config/zed/settings.json` → `~/.config/zed/settings.json`
 - `config/gh/config.yml` → `~/.config/gh/config.yml`
 - `config/claude/settings.json` → `~/.claude/settings.json`
-- `config/claude/CLAUDE.md` → `~/.claude/CLAUDE.md`
-- `config/claude/TMUX.md` → `~/.claude/TMUX.md`
-- `config/claude/SEARCH.md` → `~/.claude/SEARCH.md`
-- `config/claude/WEB.md` → `~/.claude/WEB.md`
 
 One directory is written (not symlinked) at install time via `playwright-cli install --skills`:
 - `~/.claude/skills/playwright-cli/` — browser automation skill for Claude Code (sourced from the globally installed `@playwright/cli` npm package)
