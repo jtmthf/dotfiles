@@ -100,18 +100,56 @@ qr() {
 }
 
 # Docker cleanup functions
+#
+# Reclaim order matters on Colima. Pruning frees blocks INSIDE the VM, but the
+# host's sparse disk image does not shrink until the guest filesystem is TRIMmed.
+# Prune alone looks like it did nothing when you check `df` on the Mac.
+
+# Return disk space to the host. Safe: only regenerable caches, never volumes.
+docker-reclaim() {
+    echo "==> Pruning build cache and dangling images (named volumes untouched)"
+    docker builder prune -af
+    docker image prune -f
+
+    if command -v colima &> /dev/null && colima status &> /dev/null; then
+        echo "==> TRIMming the VM disk so the host reclaims the freed blocks"
+        colima ssh -- sudo fstrim -v /mnt/lima-colima
+        echo "==> Host disk image size now:"
+        du -h -d0 "$HOME/.colima/_lima/_disks/colima/datadisk" 2>/dev/null
+    else
+        echo "Colima is not running — skipped TRIM, so the host will NOT see the space yet."
+    fi
+}
+
 docker-cleanup() {
-    echo "Cleaning up Docker..."
-    echo "WARNING: This will remove unused containers, networks, images, and build cache."
-    echo "Use docker-cleanup-full to also prune volumes."
+    echo "Cleaning up Docker: unused containers, networks, images, build cache."
+    echo "Named volumes are NOT touched. Run docker-reclaim to hand space back to the host."
     docker system prune -af
 }
 
+# DANGEROUS. `--volumes` deletes every volume with no container attached, which
+# includes database volumes whose container was merely removed. Colima keeps no
+# snapshot of these. Always read the list before confirming.
 docker-cleanup-full() {
-    echo "Full Docker cleanup including volumes..."
-    echo "WARNING: This will remove all unused volumes — check docker volume ls first."
+    local doomed
+    doomed=$(docker volume ls -qf dangling=true 2>/dev/null || true)
+
+    if [[ -z "$doomed" ]]; then
+        echo "No unused volumes to remove."
+    else
+        echo "These volumes will be PERMANENTLY DELETED:"
+        printf '%s\n' "$doomed" | sed 's/^/  /'
+        echo
+        printf 'Type DELETE to confirm: '
+        local reply
+        read -r reply
+        if [[ "$reply" != DELETE ]]; then
+            echo "Aborted. Nothing was removed."
+            return 1
+        fi
+    fi
+
     docker system prune -af --volumes
-    docker image prune -af
 }
 
 docker-stop-all() {
