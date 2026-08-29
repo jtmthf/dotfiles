@@ -1,3 +1,41 @@
 {
-  "$schema": "https://opencode.ai/config.json"
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "build": {
+      "model": "opencode-go/kimi-k2.7-code"
+    },
+    "plan": {
+      "model": "opencode-go/kimi-k3"
+    },
+    "general": {
+      "model": "opencode-go/glm-5.3"
+    },
+    "explore": {
+      "model": "opencode-go/glm-5.3-flash"
+    },
+    "scout": {
+      "description": "Read-only agent for external docs and dependency research. Use this when you need current library/framework/API documentation, version-specific behavior, or to cross-reference local dependency usage against upstream source.",
+      "mode": "subagent",
+      "model": "opencode-go/qwen3.8-flash",
+      "prompt": "{file:./prompts/scout.txt}",
+      "permission": {
+        "*": "deny",
+        "read": "allow",
+        "grep": "allow",
+        "glob": "allow",
+        "list": "allow",
+        "webfetch": "allow",
+        "websearch": "allow"
+      }
+    },
+    "compaction": {
+      "model": "opencode-go/qwen3.8-flash"
+    },
+    "title": {
+      "model": "opencode-go/qwen3.8-flash"
+    },
+    "summary": {
+      "model": "opencode-go/qwen3.8-flash"
+    }
+  }
 }
