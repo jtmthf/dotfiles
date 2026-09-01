@@ -1,17 +1,40 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/glm-5.2",
+  "small_model": "opencode-go/mimo-v2.5",
+  "permission": {
+    "bash": "ask",
+    "write": "ask",
+    "edit": "ask",
+    "read": "allow",
+    "grep": "allow",
+    "glob": "allow"
+  },
   "agent": {
     "build": {
-      "model": "opencode-go/kimi-k2.7-code"
+      "model": "opencode-go/glm-5.2"
     },
     "plan": {
-      "model": "opencode-go/kimi-k3"
+      "model": "opencode-go/glm-5.2"
+    },
+    "orchestrator": {
+      "description": "Primary agent for complex multi-step work. Decomposes tasks, delegates to specialized subagents, and integrates results. Does not write application code directly.",
+      "mode": "primary",
+      "model": "opencode-go/qwen3.7-max",
+      "permission": {
+        "edit": "deny",
+        "write": "deny",
+        "bash": "deny",
+        "read": "allow",
+        "grep": "allow",
+        "glob": "allow"
+      }
     },
     "general": {
-      "model": "opencode-go/glm-5.3"
+      "model": "opencode-go/glm-5.2"
     },
     "explore": {
-      "model": "opencode-go/glm-5.3-flash"
+      "model": "opencode-go/mimo-v2.5"
     },
     "scout": {
       "description": "Read-only agent for external docs and dependency research. Use this when you need current library/framework/API documentation, version-specific behavior, or to cross-reference local dependency usage against upstream source.",
@@ -28,14 +51,71 @@
         "websearch": "allow"
       }
     },
-    "compaction": {
+    "reviewer": {
+      "description": "Read-only code reviewer. Use for quality, security, and maintainability feedback before merging changes.",
+      "mode": "subagent",
+      "model": "opencode-go/kimi-k2.7-code",
+      "temperature": 0.1,
+      "permission": {
+        "edit": "deny",
+        "write": "deny",
+        "bash": "deny",
+        "read": "allow",
+        "grep": "allow",
+        "glob": "allow"
+      }
+    },
+    "coder": {
+      "description": "Implements a single, bounded coding task from a clear spec. Use when a task has already been decomposed.",
+      "mode": "subagent",
+      "model": "opencode-go/kimi-k2.7-code"
+    },
+    "runner": {
+      "description": "Executes bounded shell command sequences: running tests, git operations (status/diff/add/commit/log), installs, builds, linters. Reports output verbatim. Does not write or edit application code.",
+      "mode": "subagent",
+      "model": "opencode-go/mimo-v2.5",
+      "permission": {
+        "edit": "deny",
+        "write": "deny",
+        "bash": "allow",
+        "read": "allow",
+        "grep": "allow",
+        "glob": "allow"
+      }
+    },
+    "tester": {
+      "description": "Writes and runs tests, reports failures verbatim. Does not refactor production code.",
+      "mode": "subagent",
       "model": "opencode-go/qwen3.8-flash"
+    },
+    "documenter": {
+      "description": "Writes and updates Markdown documentation. Read-only access to code; can write docs with confirmation.",
+      "mode": "subagent",
+      "model": "opencode-go/glm-5.2"
+    },
+    "architect": {
+      "description": "Designs architecture, APIs, and migration plans. Read-only; produces specs and ADRs.",
+      "mode": "subagent",
+      "model": "opencode-go/glm-5.2",
+      "temperature": 0.2,
+      "permission": {
+        "edit": "deny",
+        "write": "deny",
+        "bash": "deny",
+        "read": "allow",
+        "grep": "allow",
+        "glob": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "compaction": {
+      "model": "opencode-go/mimo-v2.5"
     },
     "title": {
-      "model": "opencode-go/qwen3.8-flash"
+      "model": "opencode-go/mimo-v2.5"
     },
     "summary": {
-      "model": "opencode-go/qwen3.8-flash"
+      "model": "opencode-go/mimo-v2.5"
     }
   }
 }
