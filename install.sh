@@ -204,12 +204,18 @@ setup_cw() {
 # Semantics:
 #   - Deep object merge; live file wins on key conflicts
 #   - Arrays at .permissions.allow and .permissions.deny are union-ed (live first, then repo entries not already present)
+#   - A top-level key that was present in the repo baseline on a previous install but has since
+#     been removed from the repo file is deleted from the live file too — but only if the live
+#     value still matches what we last installed (i.e. the user never overrode it). This is how
+#     retiring a baseline key, like the old `teammateMode`, actually takes effect; otherwise a
+#     removed key sits in the live file forever since the merge only ever adds/overwrites.
 #   - Pre-merge live file is backed up once per install run
 # This is NOT a symlink — Claude Code mutates settings.json (plugin toggles, /config),
 # so we leave the live file authoritative and only top up shareable baseline entries.
 merge_claude_settings() {
     local repo_settings="$DOTFILES_DIR/config/claude/settings.json"
     local live_settings="$HOME/.claude/settings.json"
+    local manifest_settings="$HOME/.claude/.dotfiles-settings-manifest.json"
 
     if ! command -v jq &> /dev/null; then
         log_error "jq is required to merge Claude settings.json"
@@ -227,6 +233,24 @@ merge_claude_settings() {
     else
         cp "$live_settings" "$BACKUP_DIR/claude_settings.json.pre-merge"
     fi
+    if [[ -f "$manifest_settings" ]]; then
+        cp "$manifest_settings" "$BACKUP_DIR/claude_settings.json.manifest.pre-merge"
+    else
+        echo '{}' > "$manifest_settings"
+    fi
+
+    local pruned
+    pruned=$(mktemp)
+    jq -n \
+        --slurpfile live "$live_settings" \
+        --slurpfile manifest "$manifest_settings" \
+        --slurpfile repo "$repo_settings" '
+            ($manifest[0] // {}) as $old
+            | ($repo[0] // {}) as $new
+            | (($old | keys) - ($new | keys)) as $retired
+            | reduce $retired[] as $k ($live[0]; if .[$k] == $old[$k] then del(.[$k]) else . end)
+        ' > "$pruned"
+    mv "$pruned" "$live_settings"
 
     local tmp
     tmp=$(mktemp)
@@ -241,6 +265,7 @@ merge_claude_settings() {
         ' > "$tmp"
 
     mv "$tmp" "$live_settings"
+    cp "$repo_settings" "$manifest_settings"
     log_info "Merged Claude settings.json (live retained on conflicts)"
 }
 
@@ -568,8 +593,9 @@ rollback() {
     [[ -f "$latest_backup/zed_settings.json" ]] && { log_info "Restoring .config/zed/settings.json"; mkdir -p "$HOME/.config/zed"; cp "$latest_backup/zed_settings.json" "$HOME/.config/zed/settings.json"; }
     [[ -f "$latest_backup/gh_config.yml" ]] && { log_info "Restoring .config/gh/config.yml"; mkdir -p "$HOME/.config/gh"; cp "$latest_backup/gh_config.yml" "$HOME/.config/gh/config.yml"; }
     [[ -d "$latest_backup/opencode" ]] && { log_info "Restoring .config/opencode"; rm -f "$HOME/.config/opencode"; cp -R "$latest_backup/opencode" "$HOME/.config/opencode"; }
-    [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" || -f "$latest_backup/claude_DELEGATION.md" || -f "$latest_backup/claude_statusline.sh" ]] && mkdir -p "$HOME/.claude"
+    [[ -f "$latest_backup/claude_settings.json.pre-merge" || -f "$latest_backup/claude_settings.json.manifest.pre-merge" || -f "$latest_backup/claude_CLAUDE.md" || -f "$latest_backup/claude_TMUX.md" || -f "$latest_backup/claude_SEARCH.md" || -f "$latest_backup/claude_WEB.md" || -f "$latest_backup/claude_DELEGATION.md" || -f "$latest_backup/claude_statusline.sh" ]] && mkdir -p "$HOME/.claude"
     [[ -f "$latest_backup/claude_settings.json.pre-merge" ]] && { log_info "Restoring .claude/settings.json (pre-merge)"; cp "$latest_backup/claude_settings.json.pre-merge" "$HOME/.claude/settings.json"; }
+    [[ -f "$latest_backup/claude_settings.json.manifest.pre-merge" ]] && { log_info "Restoring .claude/.dotfiles-settings-manifest.json (pre-merge)"; cp "$latest_backup/claude_settings.json.manifest.pre-merge" "$HOME/.claude/.dotfiles-settings-manifest.json"; }
     [[ -f "$latest_backup/claude_CLAUDE.md" ]] && { log_info "Restoring .claude/CLAUDE.md"; cp "$latest_backup/claude_CLAUDE.md" "$HOME/.claude/CLAUDE.md"; }
     [[ -f "$latest_backup/claude_TMUX.md" ]] && { log_info "Restoring .claude/TMUX.md"; cp "$latest_backup/claude_TMUX.md" "$HOME/.claude/TMUX.md"; }
     [[ -f "$latest_backup/claude_SEARCH.md" ]] && { log_info "Restoring .claude/SEARCH.md"; cp "$latest_backup/claude_SEARCH.md" "$HOME/.claude/SEARCH.md"; }
