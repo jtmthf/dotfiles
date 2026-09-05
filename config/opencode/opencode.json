@@ -3,19 +3,68 @@
   "model": "opencode-go/glm-5.2",
   "small_model": "opencode-go/mimo-v2.5",
   "permission": {
-    "bash": "ask",
-    "write": "ask",
-    "edit": "ask",
-    "read": "allow",
-    "grep": "allow",
-    "glob": "allow"
+    "bash": {
+      "*": "allow",
+      "sudo *": "deny",
+      "dd *": "deny",
+      "shutdown *": "deny",
+      "reboot *": "deny",
+      "halt *": "deny",
+      "poweroff *": "deny",
+      "git clean *": "ask",
+      "git reset --hard*": "ask",
+      "git reset * --hard*": "ask",
+      "git push -f*": "ask",
+      "git push * -f*": "ask",
+      "git push --force*": "ask",
+      "git push * --force*": "ask"
+    }
   },
   "agent": {
     "build": {
       "model": "opencode-go/glm-5.2"
     },
     "plan": {
-      "model": "opencode-go/glm-5.2"
+      "model": "opencode-go/glm-5.2",
+      "permission": {
+        "bash": {
+          "*": "ask",
+          "pwd *": "allow",
+          "ls *": "allow",
+          "cat *": "allow",
+          "head *": "allow",
+          "tail *": "allow",
+          "wc *": "allow",
+          "stat *": "allow",
+          "file *": "allow",
+          "tree *": "allow",
+          "du *": "allow",
+          "df *": "allow",
+          "find *": "allow",
+          "fd *": "allow",
+          "rg *": "allow",
+          "grep *": "allow",
+          "sort *": "allow",
+          "uniq *": "allow",
+          "diff *": "allow",
+          "jq *": "allow",
+          "which *": "allow",
+          "command -v *": "allow",
+          "printenv *": "allow",
+          "git status *": "allow",
+          "git diff *": "allow",
+          "git log *": "allow",
+          "git show *": "allow",
+          "git branch *": "allow",
+          "git stash list": "allow",
+          "sudo *": "deny",
+          "dd *": "deny",
+          "shutdown *": "deny",
+          "reboot *": "deny",
+          "halt *": "deny",
+          "poweroff *": "deny"
+        }
+      }
     },
     "orchestrator": {
       "description": "Primary agent for complex multi-step work. Decomposes tasks, delegates to specialized subagents, and integrates results. Does not write application code directly.",
@@ -23,11 +72,8 @@
       "model": "opencode-go/qwen3.7-max",
       "permission": {
         "edit": "deny",
-        "write": "deny",
         "bash": "deny",
-        "read": "allow",
-        "grep": "allow",
-        "glob": "allow"
+        "question": "allow"
       }
     },
     "general": {
@@ -43,7 +89,12 @@
       "prompt": "{file:./prompts/scout.txt}",
       "permission": {
         "*": "deny",
-        "read": "allow",
+        "read": {
+          "*": "allow",
+          "*.env": "ask",
+          "*.env.*": "ask",
+          "*.env.example": "allow"
+        },
         "grep": "allow",
         "glob": "allow",
         "list": "allow",
@@ -58,11 +109,7 @@
       "temperature": 0.1,
       "permission": {
         "edit": "deny",
-        "write": "deny",
-        "bash": "deny",
-        "read": "allow",
-        "grep": "allow",
-        "glob": "allow"
+        "bash": "deny"
       }
     },
     "coder": {
@@ -76,11 +123,7 @@
       "model": "opencode-go/mimo-v2.5",
       "permission": {
         "edit": "deny",
-        "write": "deny",
-        "bash": "allow",
-        "read": "allow",
-        "grep": "allow",
-        "glob": "allow"
+        "bash": "allow"
       }
     },
     "tester": {
@@ -89,9 +132,15 @@
       "model": "opencode-go/qwen3.8-flash"
     },
     "documenter": {
-      "description": "Writes and updates Markdown documentation. Read-only access to code; can write docs with confirmation.",
+      "description": "Writes and updates Markdown documentation. Can create and edit Markdown files freely; changes to any other file type require confirmation.",
       "mode": "subagent",
-      "model": "opencode-go/glm-5.2"
+      "model": "opencode-go/glm-5.2",
+      "permission": {
+        "edit": {
+          "*": "ask",
+          "*.md": "allow"
+        }
+      }
     },
     "architect": {
       "description": "Designs architecture, APIs, and migration plans. Read-only; produces specs and ADRs.",
@@ -100,12 +149,7 @@
       "temperature": 0.2,
       "permission": {
         "edit": "deny",
-        "write": "deny",
-        "bash": "deny",
-        "read": "allow",
-        "grep": "allow",
-        "glob": "allow",
-        "webfetch": "allow"
+        "bash": "deny"
       }
     },
     "compaction": {
