@@ -495,7 +495,8 @@ setup_maintenance() {
         "clean-node-modules 3 0"
         "clean-worktrees 3 30"
         "clean-caches 4 0"
-        "empty-trash 4 30"
+        "clean-docker 4 30"
+        "empty-trash 5 0"
     )
 
     if [[ "$OS" == "macos" ]]; then
@@ -567,7 +568,7 @@ rollback() {
 
     # Remove scheduled maintenance jobs
     if [[ "$OS" == "macos" ]]; then
-        for name in clean-node-modules clean-worktrees clean-caches empty-trash; do
+        for name in clean-node-modules clean-worktrees clean-caches clean-docker empty-trash; do
             launchctl bootout "gui/$(id -u)/com.jackmoore.maint.$name" 2>/dev/null || true
             rm -f "$HOME/Library/LaunchAgents/com.jackmoore.maint.$name.plist"
         done

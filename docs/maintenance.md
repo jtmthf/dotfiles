@@ -10,8 +10,9 @@ macOS and a managed **crontab** block on Linux/WSL.
 |-----|----------------|--------------|---------|
 | `clean-node-modules` | 03:00 | Trash `node_modules` in projects with no git commit / file activity for `MAINT_NODE_MODULES_MAX_AGE_DAYS` (default 30). | → Trash |
 | `clean-worktrees` | 03:30 | Remove git worktrees that are clean **and** fully pushed **and** untouched for `MAINT_WORKTREE_MAX_AGE_DAYS` (default 14). | dir → Trash, then `git worktree prune` |
-| `clean-caches` | 04:00 | Prune brew/npm/pnpm/yarn/uv/go caches and Xcode DerivedData via each tool's native command (gated on `command -v`). | deleted outright (regenerable) |
-| `empty-trash` | 04:30 | Permanently delete trashed items older than `MAINT_TRASH_RETENTION_DAYS` (default 30). | deleted |
+| `clean-caches` | 04:00 | Prune brew/npm/pnpm/yarn/uv/go caches, Xcode DerivedData, and app auto-updater caches (Google Updater, orca/granola/notion updaters) via each tool's native command or outright removal (gated on `command -v` / path existence). | deleted outright (regenerable) |
+| `clean-docker` | 04:30 | `docker builder prune -af` + `docker image prune -f` (build cache + dangling images only), then TRIM the Colima VM disk so the host reclaims the freed blocks. Scheduled version of the manual `docker-reclaim` shell function. | deleted outright (regenerable) |
+| `empty-trash` | 05:00 | Permanently delete trashed items older than `MAINT_TRASH_RETENTION_DAYS` (default 30). | deleted |
 
 The Sunday times are the *preferred* slot, not the only chance to run — see
 [Catch-up](#catch-up) below.
@@ -41,9 +42,13 @@ immediately and write nothing to the logs.
   abandoned one that's clean, fully pushed, and idle for 14+ days is trashed like
   any other. The main checkout is never touched. `cw`'s manifest entry for a
   trashed worktree lingers harmlessly until `cw rm <branch>`.
-- Caches are the one outright-delete, because they self-rebuild. **Docker is
-  excluded** (pruning can drop volumes/data); use the `docker-cleanup` shell
-  function manually.
+- Caches are the one outright-delete, because they self-rebuild. `clean-docker`
+  is conservative in the same spirit: `docker builder prune -af` and
+  `docker image prune -f` (no `-a`) can only remove build cache and *untagged*
+  images, which by definition nothing depends on — running containers, stopped
+  containers, and named volumes are never touched. Anything broader
+  (`docker system prune`, or removing volumes) stays manual — see
+  `docker-cleanup` / `docker-cleanup-full` in `zsh/functions.zsh`.
 
 ## Configuration
 
@@ -67,6 +72,7 @@ anything:
 scripts/maintenance/clean-node-modules.sh --dry-run
 scripts/maintenance/clean-worktrees.sh --dry-run
 scripts/maintenance/clean-caches.sh --dry-run
+scripts/maintenance/clean-docker.sh --dry-run
 scripts/maintenance/empty-trash.sh --dry-run
 ```
 

@@ -27,7 +27,15 @@ _maint_cache_paths() {
     command -v yarn >/dev/null 2>&1 && yarn cache dir 2>/dev/null
     command -v uv   >/dev/null 2>&1 && uv cache dir 2>/dev/null
     command -v go   >/dev/null 2>&1 && go env GOCACHE 2>/dev/null
-    [[ "$OSTYPE" == darwin* ]] && echo "$HOME/Library/Developer/Xcode/DerivedData"
+    if [[ "$OSTYPE" == darwin* ]]; then
+        echo "$HOME/Library/Developer/Xcode/DerivedData"
+        # App auto-updaters that download every release and never clean up after
+        # themselves. Each app re-downloads on its next update check regardless.
+        echo "$HOME/Library/Application Support/Google/GoogleUpdater/crx_cache"
+        echo "$HOME/Library/Caches/orca-updater"
+        echo "$HOME/Library/Caches/@granolaelectron-updater"
+        echo "$HOME/Library/Caches/notion-updater"
+    fi
 }
 
 paths=()
@@ -78,6 +86,17 @@ if [[ "$OSTYPE" == darwin* ]]; then
         log_info "Removing Xcode DerivedData"
         maint_is_dry_run || rm -rf "${derived:?}/"* 2>/dev/null || true
     fi
+    for updater_cache in \
+        "$HOME/Library/Application Support/Google/GoogleUpdater/crx_cache" \
+        "$HOME/Library/Caches/orca-updater" \
+        "$HOME/Library/Caches/@granolaelectron-updater" \
+        "$HOME/Library/Caches/notion-updater"
+    do
+        if [[ -d "$updater_cache" ]]; then
+            log_info "Clearing updater cache: $updater_cache"
+            maint_is_dry_run || rm -rf "${updater_cache:?}/"* 2>/dev/null || true
+        fi
+    done
 fi
 
 after="$(_maint_total_size)"
