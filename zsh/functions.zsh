@@ -162,29 +162,6 @@ docker-rm-all() {
     docker rm $(docker ps -aq) 2>/dev/null || echo "No containers to remove"
 }
 
-# --- Shared Cargo target dir across a repo's git worktrees --------------------
-# A repo checked out as multiple git worktrees (one per branch/PR) rebuilds a
-# separate target/ in each, even though they share the same crate graph. Cargo
-# keys build artifacts by crate/profile/features, so worktrees of the SAME repo
-# can safely share one CARGO_TARGET_DIR. This detects any Cargo project via its
-# common .git dir (shared by every worktree of that repo) and points it at a
-# dir keyed by the repo's main path — generic, no per-project config needed.
-_cargo_target_dir_chpwd() {
-    local common_dir main_root
-    if common_dir="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then
-        main_root="${common_dir%/.git}"
-        if [[ -f "$main_root/Cargo.toml" || -f "$main_root/Cargo.lock" ]]; then
-            export CARGO_TARGET_DIR="$HOME/.cache/cargo-target${main_root//\//_}"
-            return
-        fi
-    fi
-    [[ "${CARGO_TARGET_DIR:-}" == "$HOME/.cache/cargo-target"* ]] && unset CARGO_TARGET_DIR
-}
-
-autoload -Uz add-zsh-hook
-add-zsh-hook chpwd _cargo_target_dir_chpwd
-_cargo_target_dir_chpwd
-
 # Git functions
 git-cleanup() {
     echo "Cleaning up Git repository..."
