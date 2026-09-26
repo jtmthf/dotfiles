@@ -1,7 +1,7 @@
 ---
 description: Run a spec-driven-development loop: plan, code, review, test.
 agent: orchestrator
-subtask: true
+subagent: true
 ---
 
 Run a spec-driven development loop for: $ARGUMENTS

@@ -1,7 +1,7 @@
 ---
 description: Plan a feature or task using the plan agent.
 agent: plan
-subtask: true
+subagent: true
 ---
 
 Plan the following work: $ARGUMENTS

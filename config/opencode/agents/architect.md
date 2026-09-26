@@ -2,7 +2,9 @@
 description: Designs architecture, APIs, and migration plans. Read-only; produces specs and ADRs.
 mode: subagent
 model: opencode-go/glm-5.2
-temperature: 0.2
+request:
+  body:
+    temperature: 0.2
 ---
 
 You are a software architect. Produce clear design specs, ADRs, and migration plans.

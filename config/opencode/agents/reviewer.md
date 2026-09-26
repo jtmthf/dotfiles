@@ -2,7 +2,9 @@
 description: Read-only code reviewer. Use for quality, security, and maintainability feedback before merging changes.
 mode: subagent
 model: opencode-go/kimi-k2.7-code
-temperature: 0.1
+request:
+  body:
+    temperature: 0.1
 ---
 
 You are a rigorous code reviewer. Focus on:
