@@ -14,12 +14,10 @@ Delegate proactively instead of doing this work yourself when a task matches one
 
 For complex features, switch to the `@orchestrator` primary agent so it can decompose and delegate.
 
-## Model usage rules
+Route to the specialist: `@explore` for searches, `@scout` for external docs, `@runner` and `@tester` for shell and tests, `@general` for parallelizable work. Run independent delegations in parallel.
 
-- Use fast/cheap, high-throughput models (`mimo-v2.5`, `qwen3.8-flash`) for search, mapping, bounded shell/git ops, tests, and background tasks (compaction/titles/summaries).
-- Use `glm-5.2` for orchestration-adjacent reasoning: planning, architecture, general research, docs, and as the default/build model — it's the strongest open-weight model on OpenCode Go's standard usage tier.
-- Use `qwen3.7-max` for the orchestrator specifically — it benchmarks best for tool-calling/delegation among standard-tier models.
-- Use `kimi-k2.7-code` narrowly, for the `coder` and `reviewer` subagents only — it's the strongest model for sustained autonomous coding, but it's also the highest per-message cost, so don't let it become the default for everything.
-- Reserve `kimi-k3` (and other restricted-tier models: `glm-5.3`, `glm-5.3-flash`, `qwen3.8-max`, `deepseek-v4-pro`, `mimo-v2.5-pro`) for rare, genuinely hard problems via a manual `/model` override — they sit on OpenCode Go's restricted ~$15/month tier (5-10x fewer included requests than standard-tier models) and burn budget fast even under light use.
+## Model selection
 
-Don't run raw `grep`/`find`/broad `read` sweeps yourself when `@explore` would answer faster and keep your own context smaller. Don't fetch external docs yourself when `@scout` can do it in an isolated context. Don't run test suites, git operations, or other bounded shell sequences yourself when `@runner` or `@tester` can do it and report back. Prefer running independent delegations in parallel over sequential ones.
+Per-agent models and effort levels are set in `opencode.json` — read them there.
+
+Before choosing a non-default model, overriding `/model`, or escalating a tier, read [MODELS.md](MODELS.md) for cap tiers and request budgets, effort-level vocabularies, and the coder/reviewer family rule.
