@@ -22,8 +22,10 @@
   },
   "agent": {
     "build": {
+      "description": "Default hands-on coding agent for direct work outside the orchestrator flow.",
       "model": "opencode-go/deepseek-v4.1-flash",
-      "variant": "max"
+      "variant": "max",
+      "prompt": "{file:./prompts/build.txt}"
     },
     "plan": {
       "model": "opencode-go/glm-5.3-flash",
@@ -73,6 +75,7 @@
       "mode": "primary",
       "model": "opencode-go/glm-5.3-flash",
       "variant": "low",
+      "prompt": "{file:./prompts/orchestrator.txt}",
       "permission": {
         "edit": "deny",
         "bash": "deny",
@@ -111,6 +114,7 @@
       "description": "Read-only code reviewer. Use for quality, security, and maintainability feedback before merging changes.",
       "mode": "subagent",
       "model": "opencode-go/kimi-k2.7-code",
+      "prompt": "{file:./prompts/reviewer.txt}",
       "temperature": 0.1,
       "permission": {
         "edit": "deny",
@@ -121,12 +125,14 @@
       "description": "Implements a single, bounded coding task from a clear spec. Use when a task has already been decomposed.",
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4.1-flash",
-      "variant": "max"
+      "variant": "max",
+      "prompt": "{file:./prompts/coder.txt}"
     },
     "runner": {
       "description": "Executes bounded shell command sequences: running tests, git operations (status/diff/add/commit/log), installs, builds, linters. Reports output verbatim. Does not write or edit application code.",
       "mode": "subagent",
       "model": "opencode-go/mimo-v2.5",
+      "prompt": "{file:./prompts/runner.txt}",
       "permission": {
         "edit": "deny",
         "bash": "allow"
@@ -136,13 +142,15 @@
       "description": "Writes and runs tests, reports failures verbatim. Does not refactor production code.",
       "mode": "subagent",
       "model": "opencode-go/glm-5.3-flash",
-      "variant": "high"
+      "variant": "high",
+      "prompt": "{file:./prompts/tester.txt}"
     },
     "documenter": {
       "description": "Writes and updates Markdown documentation. Can create and edit Markdown files freely; changes to any other file type require confirmation.",
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4.1-flash",
       "variant": "low",
+      "prompt": "{file:./prompts/documenter.txt}",
       "permission": {
         "edit": {
           "*": "ask",
@@ -155,6 +163,7 @@
       "mode": "subagent",
       "model": "opencode-go/glm-5.3",
       "variant": "max",
+      "prompt": "{file:./prompts/architect.txt}",
       "temperature": 0.2,
       "permission": {
         "edit": "deny",

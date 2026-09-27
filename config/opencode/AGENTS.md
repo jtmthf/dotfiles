@@ -18,6 +18,6 @@ Route to the specialist: `@explore` for searches, `@scout` for external docs, `@
 
 ## Model selection
 
-Per-agent models and effort levels are set in `opencode.json` — read them there.
+Per-agent models and effort levels are set in `opencode.json` — read them there. Each agent's system prompt lives in `prompts/<agent>.txt`, referenced from `opencode.json` via `"prompt": "{file:./prompts/<agent>.txt}"`. There are deliberately no `agents/*.md` files: file-based agent definitions override the `agent` block in `opencode.json`, so a stray markdown file silently wins over this config. Define agents here, not in `agents/`.
 
 Before choosing a non-default model, overriding `/model`, or escalating a tier, read [MODELS.md](MODELS.md) for cap tiers and request budgets, effort-level vocabularies, and the coder/reviewer family rule.
