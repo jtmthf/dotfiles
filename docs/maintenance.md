@@ -10,8 +10,9 @@ macOS and a managed **crontab** block on Linux/WSL.
 |-----|----------------|--------------|---------|
 | `clean-node-modules` | 03:00 | Trash `node_modules` in projects with no git commit / file activity for `MAINT_NODE_MODULES_MAX_AGE_DAYS` (default 30). | → Trash |
 | `clean-worktrees` | 03:30 | Remove git worktrees that are clean **and** fully pushed **and** untouched for `MAINT_WORKTREE_MAX_AGE_DAYS` (default 14). | dir → Trash, then `git worktree prune` |
+| `clean-rust-targets` | 03:45 | Trash Cargo `target` dirs in projects with no git commit / file activity for `MAINT_RUST_TARGET_MAX_AGE_DAYS` (default 30). Build output only; regenerable with `cargo build`. | → Trash |
 | `clean-caches` | 04:00 | Prune brew/npm/pnpm/yarn/uv/go caches, Xcode DerivedData, and app auto-updater caches (Google Updater, orca/granola/notion updaters) via each tool's native command or outright removal (gated on `command -v` / path existence). | deleted outright (regenerable) |
-| `clean-docker` | 04:30 | `docker builder prune -af` + `docker image prune -f` (build cache + dangling images only), then TRIM the Colima VM disk so the host reclaims the freed blocks. Scheduled version of the manual `docker-reclaim` shell function. | deleted outright (regenerable) |
+| `clean-docker` | 04:30 | `docker builder prune -af`, `docker image prune -f`, and `docker image prune -a -f` (build cache + dangling + unused tagged images; see `MAINT_DOCKER_PRUNE_UNUSED_IMAGES`), then TRIM the Colima VM disk so the host reclaims the freed blocks. Scheduled version of the manual `docker-reclaim` shell function. | deleted outright (regenerable) |
 | `empty-trash` | 05:00 | Permanently delete trashed items older than `MAINT_TRASH_RETENTION_DAYS` (default 30). | deleted |
 
 The Sunday times are the *preferred* slot, not the only chance to run — see
@@ -43,12 +44,18 @@ immediately and write nothing to the logs.
   any other. The main checkout is never touched. `cw`'s manifest entry for a
   trashed worktree lingers harmlessly until `cw rm <branch>`.
 - Caches are the one outright-delete, because they self-rebuild. `clean-docker`
-  is conservative in the same spirit: `docker builder prune -af` and
-  `docker image prune -f` (no `-a`) can only remove build cache and *untagged*
-  images, which by definition nothing depends on — running containers, stopped
-  containers, and named volumes are never touched. Anything broader
-  (`docker system prune`, or removing volumes) stays manual — see
-  `docker-cleanup` / `docker-cleanup-full` in `zsh/functions.zsh`.
+  is bounded in the same spirit: it removes build cache, dangling images, and
+  unused *tagged* images — everything it deletes is regenerable (re-pull or
+  rebuild). Running containers, stopped containers, and named volumes are never
+  touched, and no image referenced by a container is removed. Unused tagged
+  images are included because they accumulate indefinitely and, left alone,
+  fill the Colima disk; disable that one step with
+  `MAINT_DOCKER_PRUNE_UNUSED_IMAGES=0`. Anything broader (`docker system prune`,
+  or removing volumes) stays manual — see `docker-cleanup` / `docker-cleanup-full`
+  in `zsh/functions.zsh`. The job resolves the live Colima home by probing
+  `$COLIMA_HOME`, `$XDG_CONFIG_HOME/colima`, and `~/.colima`, so a stale
+  `~/.colima` can no longer make it skip the TRIM (which is what previously
+  left freed blocks stranded inside the VM).
 
 ## Configuration
 
@@ -59,7 +66,9 @@ the job scripts never need editing:
 MAINT_SCAN_ROOTS=("$HOME/Projects")
 MAINT_NODE_MODULES_MAX_AGE_DAYS=30
 MAINT_WORKTREE_MAX_AGE_DAYS=14
+MAINT_RUST_TARGET_MAX_AGE_DAYS=30
 MAINT_TRASH_RETENTION_DAYS=30
+MAINT_DOCKER_PRUNE_UNUSED_IMAGES=1   # 0 = dangling-only pruning
 MAINT_MIN_INTERVAL_DAYS=6      # how often each job actually does work
 ```
 
@@ -71,6 +80,7 @@ anything:
 ```bash
 scripts/maintenance/clean-node-modules.sh --dry-run
 scripts/maintenance/clean-worktrees.sh --dry-run
+scripts/maintenance/clean-rust-targets.sh --dry-run
 scripts/maintenance/clean-caches.sh --dry-run
 scripts/maintenance/clean-docker.sh --dry-run
 scripts/maintenance/empty-trash.sh --dry-run

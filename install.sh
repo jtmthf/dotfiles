@@ -389,6 +389,29 @@ setup_playwright_cli() {
     fi
 }
 
+# Setup OpenCode V2. The Homebrew formula still ships V1 only, so V2 comes from
+# the official installer (installs to ~/.opencode/bin). Idempotent: only installs
+# when missing; upgrade with `opencode upgrade` or re-run the installer.
+setup_opencode() {
+    log_info "Setting up OpenCode..."
+    if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+        log_info "OpenCode already installed: $("$HOME/.opencode/bin/opencode" --version 2>/dev/null || echo unknown)"
+        return
+    fi
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY RUN] Would install OpenCode V2 via https://opencode.ai/v2/install"
+        return
+    fi
+    # --no-modify-path: PATH is managed by zsh/.zshenv in this repo.
+    run bash -c 'curl -fsSL https://opencode.ai/v2/install | bash -s -- --no-modify-path'
+    if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+        log_success "OpenCode installed: $("$HOME/.opencode/bin/opencode" --version 2>/dev/null)"
+    else
+        log_error "OpenCode install failed"
+        return 1
+    fi
+}
+
 # Setup crawl4ai (downloads Playwright browsers)
 setup_crawl4ai() {
     log_info "Setting up crawl4ai..."
@@ -481,7 +504,7 @@ _install_maint_cron() {
     log_success "Maintenance cron installed"
 }
 
-# Setup scheduled maintenance jobs (node_modules / worktrees / caches / trash)
+# Setup scheduled maintenance jobs (node_modules / worktrees / rust / caches / trash)
 setup_maintenance() {
     log_info "Setting up scheduled maintenance jobs..."
 
@@ -494,6 +517,7 @@ setup_maintenance() {
     local jobs=(
         "clean-node-modules 3 0"
         "clean-worktrees 3 30"
+        "clean-rust-targets 3 45"
         "clean-caches 4 0"
         "clean-docker 4 30"
         "empty-trash 5 0"
@@ -568,7 +592,7 @@ rollback() {
 
     # Remove scheduled maintenance jobs
     if [[ "$OS" == "macos" ]]; then
-        for name in clean-node-modules clean-worktrees clean-caches clean-docker empty-trash; do
+        for name in clean-node-modules clean-worktrees clean-rust-targets clean-caches clean-docker empty-trash; do
             launchctl bootout "gui/$(id -u)/com.jackmoore.maint.$name" 2>/dev/null || true
             rm -f "$HOME/Library/LaunchAgents/com.jackmoore.maint.$name.plist"
         done
@@ -619,6 +643,7 @@ main() {
     setup_tmux
     setup_cw
     setup_claude
+    setup_opencode
     setup_playwright_cli
     setup_zed
     setup_gh

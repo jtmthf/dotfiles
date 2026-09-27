@@ -17,8 +17,18 @@ MAINT_NODE_MODULES_MAX_AGE_DAYS=30
 # pushed (upstream exists, no unpushed commits) AND untouched for this many days.
 MAINT_WORKTREE_MAX_AGE_DAYS=14
 
+# Trash a Cargo `target` directory once its project has had no git commit or
+# file activity for at least this many days. Build output only (regenerable).
+MAINT_RUST_TARGET_MAX_AGE_DAYS=30
+
 # empty-trash permanently deletes trashed items older than this many days.
 MAINT_TRASH_RETENTION_DAYS=30
+
+# clean-docker also removes unused *tagged* images (docker image prune -a -f).
+# These accumulate indefinitely and are what actually fills the Colima disk —
+# dangling-only pruning never touches them. Containers and volumes are still
+# never removed; set to 0 to fall back to dangling-only pruning.
+MAINT_DOCKER_PRUNE_UNUSED_IMAGES="${MAINT_DOCKER_PRUNE_UNUSED_IMAGES:-1}"
 
 # Minimum days between real runs of any job. The schedulers poll more often than
 # this (launchd every ~6h + the Sunday slot; cron every ~6h); a job only does
