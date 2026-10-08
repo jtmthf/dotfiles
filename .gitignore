@@ -2,3 +2,5 @@ zsh/.zshrc.local
 zsh/plugins/
 .DS_Store
 .claude/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
