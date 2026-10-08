@@ -84,7 +84,8 @@ brew "redis"
 tap "yoanbernabeu/tap"
 brew "yoanbernabeu/tap/grepai"  # Semantic code search (vector embeddings via Ollama)
 brew "ollama", start_service: true  # Local LLMs (auto-start as a service)
-brew "opencode"      # AI coding CLI
+# opencode (V2) is installed by install.sh:setup_opencode via the official
+# installer to ~/.opencode/bin — the Homebrew formula still ships V1 only.
 brew "claude-squad"  # Multi-agent Claude Code TUI (cs binary)
 
 

@@ -1,20 +1,30 @@
 # Model Policy
 
-Reference for choosing and escalating models on OpenCode Go. Per-agent assignments live in `opencode.json`; this file holds the constraints behind them.
+Reference for choosing and escalating models on OpenCode Go Plus. Per-agent assignments live in `opencode.json`; this file holds the constraints behind them.
 
 Read this when picking a non-default model, overriding `/model`, or escalating a tier.
 
 ## Caps
 
-OpenCode Go is a single $10/month plan. Each model carries a monthly dollar cap — **$60 / $30 / $15** — with 5-hour = 20% and weekly = 50% sub-caps.
+Go Plus is one shared $40/month pool: every model draws from the same allowance, and more expensive models consume it faster. Per-request figures are estimates from Go token prices and the documented tokens per request; actual burn varies with request and response length.
 
-| Cap | Est. requests/mo | Models |
+| Model | In / Out ($ per 1M tokens) | Est. cost/request |
 | --- | --- | --- |
-| $60 | 6.7k – 150k | `mimo-v2.5` 150k · `deepseek-v4.1-flash` 130k · `glm-5.3-flash` 31.5k · `kimi-k2.7-code` 6.7k |
-| $30 | 840 – 27k | `qwen3.8-flash` 27k · `deepseek-v4-flash` · `hy4-preview` · `qwen3.7-max` 840 |
-| $15 | 490 – 16.3k | `mimo-v2.5-pro` 16.3k · `deepseek-v4-pro` 5.2k · `glm-5.3` 1.1k · `qwen3.8-max` 810 · `kimi-k3` 490 |
+| `longcat-2.5-preview-free` | Free | Free / unlimited |
+| `muse-spark-1.3-contributor` | $0.10 / $0.20 | Cheapest per-request class* |
+| `mimo-v2.5` | — | Cheap utility; use for background agents |
+| `deepseek-v4.1-flash` (off-peak) | $0.15 / $0.60 | $0.00046 |
+| `gpt-6-luna` | $0.10 / $0.50 | $0.00071 |
+| `deepseek-v4.1-flash` (peak) | $0.30 / $1.20 | $0.00092 |
+| `qwen3.8-flash` | $0.15 / $0.47 | $0.00111 |
+| `glm-5.3-flash` | $0.15 / $0.50 | $0.0019 |
+| `minimax-m2.7` | $0.30 / $1.20 | $0.0035 |
+| `kimi-k2.7-code` | — | ~$0.009 estimated (legacy: 6.7k requests on $60) |
+| `glm-5.3` | $1.40 / $4.40 | ~$0.014 |
+| `qwen3.8-max` | $2.00 / $6.00 | ~$0.019 |
+| `kimi-k3` | $3.00 / $15.00 | $0.031 (67× DeepSeek off-peak) |
 
-Caps are per model. Spread work across pools — a heavy session on one model hits its 5-hour sub-cap regardless of headroom elsewhere.
+*Muse Spark trains on prompts; see [Guardrails](#guardrails).
 
 ## Effort levels
 
@@ -36,16 +46,18 @@ Effort levels are largely un-benchmarked outside the GLM family — only `glm-5.
 
 ## Choosing
 
-- **Coder and reviewer come from different families** — `deepseek-v4.1-flash` writes, `kimi-k2.7-code` reviews.
-- **`glm-5.3-flash` is the cheap reasoning pool** — DeepSWE v1.1 63 at $0.24/task, and the only model here with a published effort ladder.
+- **Keep high-volume roles cheap** — build, coder, general, plan, tester, and orchestrator should use the cheapest capable model. Every 1k requests on `kimi-k3` costs about as much as 16k on `glm-5.3-flash` or 66k on DeepSeek off-peak.
+- **Reserve expensive models for low-volume, high-judgment work** — use `glm-5.3` / `max` for architect and `kimi-k2.7-code` for reviewer. Keep coder and reviewer in different families: `deepseek-v4.1-flash` writes, `kimi-k2.7-code` reviews.
+- **`kimi-k3` / `max` is escalation-only** for hard reasoning, not overflow for high-volume work.
+- **`documenter` runs on `gpt-6-luna`** to minimize burn.
 
 ## Guardrails
 
-- Muse Spark "Contributor" models train on your prompts — keep private code off them.
-- DeepSeek peak pricing on Go: 01:00–04:00 and 06:00–10:00 UTC Mon–Fri; off-peak is 50%.
-- Background agents (`compaction` / `title` / `summary`) and `small_model` share the MiMo-V2.5 pool.
+- Muse Spark "Contributor" trains on your prompts — keep private code off it.
+- DeepSeek peak pricing on Go (01:00–04:00 and 06:00–10:00 UTC Mon–Fri) doubles burn versus off-peak.
+- Background agents (`compaction` / `title` / `summary`) and `agents.title` use the cheapest utility model, `mimo-v2.5`.
 
 ## Retired defaults
 
-- `glm-5.2` — same $60 cap as `glm-5.3-flash`, but DeepSWE v1.1 44 vs 63 at ~16x the cost per task ($3.92 vs $0.24).
-- `qwen3.7-max` — ~840 req/mo on a $30 cap. Vendor claimed 80.4 SWE-bench Verified; an independent bash-only re-run scored 68.8% (AA Index 29).
+- `glm-5.2` — DeepSWE v1.1 44 vs 63 for `glm-5.3-flash`, at ~16× the cost per task ($3.92 vs $0.24).
+- `qwen3.7-max` — vendor claimed 80.4 SWE-bench Verified; an independent bash-only re-run scored 68.8% (AA Index 29).

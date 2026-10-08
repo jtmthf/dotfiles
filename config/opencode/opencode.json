@@ -1,182 +1,639 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/deepseek-v4.1-flash",
-  "small_model": "opencode-go/mimo-v2.5",
-  "permission": {
-    "bash": {
-      "*": "allow",
-      "sudo *": "deny",
-      "dd *": "deny",
-      "shutdown *": "deny",
-      "reboot *": "deny",
-      "halt *": "deny",
-      "poweroff *": "deny",
-      "git clean *": "ask",
-      "git reset --hard*": "ask",
-      "git reset * --hard*": "ask",
-      "git push -f*": "ask",
-      "git push * -f*": "ask",
-      "git push --force*": "ask",
-      "git push * --force*": "ask"
+  "permissions": [
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "sudo *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "dd *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "shutdown *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "reboot *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "halt *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "poweroff *",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "git clean *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git reset --hard*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git reset * --hard*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git push -f*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git push * -f*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git push --force*",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "git push * --force*",
+      "effect": "ask"
     }
-  },
-  "agent": {
+  ],
+  "agents": {
     "build": {
       "description": "Default hands-on coding agent for direct work outside the orchestrator flow.",
-      "model": "opencode-go/deepseek-v4.1-flash",
-      "variant": "max",
-      "prompt": "{file:./prompts/build.txt}"
+      "mode": "all",
+      "model": "opencode-go/deepseek-v4.1-flash#max",
+      "system": "{file:./prompts/build.txt}"
     },
     "plan": {
-      "model": "opencode-go/glm-5.3-flash",
-      "variant": "high",
-      "permission": {
-        "bash": {
-          "*": "ask",
-          "pwd *": "allow",
-          "ls *": "allow",
-          "cat *": "allow",
-          "head *": "allow",
-          "tail *": "allow",
-          "wc *": "allow",
-          "stat *": "allow",
-          "file *": "allow",
-          "tree *": "allow",
-          "du *": "allow",
-          "df *": "allow",
-          "find *": "allow",
-          "fd *": "allow",
-          "rg *": "allow",
-          "grep *": "allow",
-          "sort *": "allow",
-          "uniq *": "allow",
-          "diff *": "allow",
-          "jq *": "allow",
-          "which *": "allow",
-          "command -v *": "allow",
-          "printenv *": "allow",
-          "git status *": "allow",
-          "git diff *": "allow",
-          "git log *": "allow",
-          "git show *": "allow",
-          "git branch *": "allow",
-          "git stash list": "allow",
-          "sudo *": "deny",
-          "dd *": "deny",
-          "shutdown *": "deny",
-          "reboot *": "deny",
-          "halt *": "deny",
-          "poweroff *": "deny"
+      "mode": "all",
+      "model": "opencode-go/glm-5.3-flash#high",
+      "permissions": [
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        },
+        {
+          "action": "shell",
+          "resource": "pwd *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "ls *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "cat *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "head *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "tail *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "wc *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "stat *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "file *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "tree *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "du *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "df *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "find *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "fd *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "sort *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "uniq *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "diff *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "jq *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "which *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "command -v *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "printenv *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git status *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git branch *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git stash list",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "sudo *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "dd *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "shutdown *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "reboot *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "halt *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "poweroff *",
+          "effect": "deny"
         }
-      }
+      ]
     },
     "orchestrator": {
       "description": "Primary agent for complex multi-step work. Decomposes tasks, delegates to specialized subagents, and integrates results. Does not write application code directly.",
       "mode": "primary",
-      "model": "opencode-go/glm-5.3-flash",
-      "variant": "low",
-      "prompt": "{file:./prompts/orchestrator.txt}",
-      "permission": {
-        "edit": "deny",
-        "bash": "deny",
-        "question": "allow"
-      }
+      "model": "opencode-go/glm-5.3-flash#low",
+      "system": "{file:./prompts/orchestrator.txt}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "question",
+          "resource": "*",
+          "effect": "allow"
+        }
+      ]
     },
     "general": {
-      "model": "opencode-go/glm-5.3-flash",
-      "variant": "high"
+      "mode": "all",
+      "model": "opencode-go/glm-5.3-flash#high"
     },
     "explore": {
+      "mode": "all",
       "model": "opencode-go/mimo-v2.5"
     },
     "scout": {
       "description": "Read-only agent for external docs and dependency research. Use this when you need current library/framework/API documentation, version-specific behavior, or to cross-reference local dependency usage against upstream source.",
       "mode": "subagent",
-      "model": "opencode-go/qwen3.8-flash",
-      "variant": "medium",
-      "prompt": "{file:./prompts/scout.txt}",
-      "permission": {
-        "*": "deny",
-        "read": {
-          "*": "allow",
-          "*.env": "ask",
-          "*.env.*": "ask",
-          "*.env.example": "allow"
+      "model": "opencode-go/qwen3.8-flash#medium",
+      "system": "{file:./prompts/scout.txt}",
+      "permissions": [
+        {
+          "action": "*",
+          "resource": "*",
+          "effect": "deny"
         },
-        "grep": "allow",
-        "glob": "allow",
-        "list": "allow",
-        "webfetch": "allow",
-        "websearch": "allow"
-      }
+        {
+          "action": "read",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "read",
+          "resource": "*.env",
+          "effect": "ask"
+        },
+        {
+          "action": "read",
+          "resource": "*.env.*",
+          "effect": "ask"
+        },
+        {
+          "action": "read",
+          "resource": "*.env.example",
+          "effect": "allow"
+        },
+        {
+          "action": "grep",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "glob",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "list",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "websearch",
+          "resource": "*",
+          "effect": "allow"
+        }
+      ]
     },
     "reviewer": {
       "description": "Read-only code reviewer. Use for quality, security, and maintainability feedback before merging changes.",
       "mode": "subagent",
       "model": "opencode-go/kimi-k2.7-code",
-      "prompt": "{file:./prompts/reviewer.txt}",
-      "temperature": 0.1,
-      "permission": {
-        "edit": "deny",
-        "bash": "deny"
-      }
+      "system": "{file:./prompts/reviewer.txt}",
+      "request": {
+        "body": {
+          "temperature": 0.1
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "pwd *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "ls *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "cat *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "head *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "tail *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "wc *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "stat *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "file *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "tree *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "du *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "df *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "find *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "fd *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "rg *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "grep *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "sort *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "uniq *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "diff *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "jq *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "which *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "command -v *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "printenv *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git status *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git diff *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git log *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git show *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git branch *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git rev-parse *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git merge-base *",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "git stash list",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "sudo *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "dd *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "shutdown *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "reboot *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "halt *",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "poweroff *",
+          "effect": "deny"
+        }
+      ]
     },
     "coder": {
       "description": "Implements a single, bounded coding task from a clear spec. Use when a task has already been decomposed.",
       "mode": "subagent",
-      "model": "opencode-go/deepseek-v4.1-flash",
-      "variant": "max",
-      "prompt": "{file:./prompts/coder.txt}"
+      "model": "opencode-go/deepseek-v4.1-flash#max",
+      "system": "{file:./prompts/coder.txt}"
     },
     "runner": {
       "description": "Executes bounded shell command sequences: running tests, git operations (status/diff/add/commit/log), installs, builds, linters. Reports output verbatim. Does not write or edit application code.",
       "mode": "subagent",
       "model": "opencode-go/mimo-v2.5",
-      "prompt": "{file:./prompts/runner.txt}",
-      "permission": {
-        "edit": "deny",
-        "bash": "allow"
-      }
+      "system": "{file:./prompts/runner.txt}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        }
+      ]
     },
     "tester": {
       "description": "Writes and runs tests, reports failures verbatim. Does not refactor production code.",
       "mode": "subagent",
-      "model": "opencode-go/glm-5.3-flash",
-      "variant": "high",
-      "prompt": "{file:./prompts/tester.txt}"
+      "model": "opencode-go/glm-5.3-flash#high",
+      "system": "{file:./prompts/tester.txt}"
     },
     "documenter": {
       "description": "Writes and updates Markdown documentation. Can create and edit Markdown files freely; changes to any other file type require confirmation.",
       "mode": "subagent",
-      "model": "opencode-go/deepseek-v4.1-flash",
-      "variant": "low",
-      "prompt": "{file:./prompts/documenter.txt}",
-      "permission": {
-        "edit": {
-          "*": "ask",
-          "*.md": "allow"
+      "model": "opencode-go/gpt-6-luna",
+      "system": "{file:./prompts/documenter.txt}",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "ask"
+        },
+        {
+          "action": "edit",
+          "resource": "*.md",
+          "effect": "allow"
         }
-      }
+      ]
     },
     "architect": {
       "description": "Designs architecture, APIs, and migration plans. Read-only; produces specs and ADRs.",
       "mode": "subagent",
-      "model": "opencode-go/glm-5.3",
-      "variant": "max",
-      "prompt": "{file:./prompts/architect.txt}",
-      "temperature": 0.2,
-      "permission": {
-        "edit": "deny",
-        "bash": "deny"
-      }
+      "model": "opencode-go/glm-5.3#max",
+      "system": "{file:./prompts/architect.txt}",
+      "request": {
+        "body": {
+          "temperature": 0.2
+        }
+      },
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     },
     "compaction": {
+      "mode": "all",
       "model": "opencode-go/mimo-v2.5"
     },
     "title": {
+      "mode": "all",
       "model": "opencode-go/mimo-v2.5"
     },
     "summary": {
+      "mode": "all",
       "model": "opencode-go/mimo-v2.5"
     }
   }

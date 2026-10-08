@@ -23,6 +23,11 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 export EDITOR="${EDITOR:-nvim}"
 export VISUAL="${VISUAL:-nvim}"
 
+# Mise (runtime manager) - defined before PATH setup so shims dir below can use it
+export MISE_DATA_DIR="$XDG_DATA_HOME/mise"
+export MISE_CONFIG_DIR="$XDG_CONFIG_HOME/mise"
+export MISE_CACHE_DIR="$XDG_CACHE_HOME/mise"
+
 # Essential PATH setup
 # Build PATH efficiently without duplicates
 typeset -U path PATH
@@ -34,17 +39,25 @@ path=(
     /usr/local/sbin
     /home/linuxbrew/.linuxbrew/bin
     /home/linuxbrew/.linuxbrew/sbin
-    
+
+    # Mise shims: must be ahead of ~/.local/bin so version-aware tool
+    # resolution wins over fixed installs there. This is the only mise
+    # integration that non-interactive, non-login shells (Claude Code,
+    # CI, `zsh -c '...'` scripts) ever see, since .zprofile and .zshrc
+    # (where the real `mise activate` calls live) don't run for them.
+    "$MISE_DATA_DIR/shims"
+
     # User paths
+    "$HOME/.opencode/bin"
     "$HOME/.local/bin"
     "$HOME/bin"
-    
+
     # System paths
     /usr/bin
     /bin
     /usr/sbin
     /sbin
-    
+
     # Keep existing PATH
     $path
 )
@@ -68,11 +81,6 @@ export DEVELOPMENT_ENVIRONMENT="${DEVELOPMENT_ENVIRONMENT:-local}"
 # Skip global compinit for faster startup
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_ANALYTICS=1
-
-# Mise (runtime manager) - minimal setup
-export MISE_DATA_DIR="$XDG_DATA_HOME/mise"
-export MISE_CONFIG_DIR="$XDG_CONFIG_HOME/mise"
-export MISE_CACHE_DIR="$XDG_CACHE_HOME/mise"
 
 # GPG TTY for signing (compute once, persist for the session)
 export GPG_TTY="${GPG_TTY:-$(tty)}"

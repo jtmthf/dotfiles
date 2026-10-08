@@ -1,23 +1,21 @@
 # Subagent Delegation
 
-Delegate proactively instead of doing this work yourself when a task matches one of these:
+Delegate when a task matches one of these:
 
-- **Codebase search/exploration** — finding files by pattern, grepping for symbols, or answering "how does X work in this repo": delegate to `@explore`. State a thoroughness level (quick / medium / very thorough) when you call it.
-- **External library, framework, API, or dependency research** — docs, version-specific behavior, upstream source: delegate to `@scout`.
-- **Bounded shell command sequences** — running tests, git operations (status/diff/add/commit/log), installs, builds, linters: delegate to `@runner` (tests that need to be written first go to `@tester` instead).
-- **Multi-step or parallelizable research/execution** that isn't a narrow file search or doc lookup: delegate to `@general`.
-- **Architecture, API design, or migration planning**: delegate to `@architect`.
-- **Implementing a single, bounded coding task**: delegate to `@coder`.
-- **Code review before merging**: delegate to `@reviewer`.
-- **Writing/updating documentation**: delegate to `@documenter`.
-- **Writing or running tests**: delegate to `@tester`.
+- **Reconnaissance** — you do not yet know where something lives, or how an unfamiliar area works: `@explore` (say quick / medium / very thorough).
+- **External docs** — library, framework, API or dependency behaviour: `@scout`.
+- **Tests** — writing or running them: `@tester`.
+- **Other shell sequences** — git (`status`/`diff`/`add`/`commit`/`log`), installs, builds, linters: `@runner`.
+- **Multi-step or parallelisable work** wider than a search: `@general`.
+- **Design** — architecture, API, migration: `@architect`.
+- **One bounded coding task from a spec**: `@coder`.
+- **Review before merge**: `@reviewer`.
+- **Documentation**: `@documenter`.
 
-For complex features, switch to the `@orchestrator` primary agent so it can decompose and delegate.
-
-Route to the specialist: `@explore` for searches, `@scout` for external docs, `@runner` and `@tester` for shell and tests, `@general` for parallelizable work. Run independent delegations in parallel.
+Read the file yourself when you already know it is the one you will edit; run a single read-only command yourself, and hand over the sequence. For complex features, switch to the `@orchestrator` primary agent. Run independent delegations in parallel.
 
 ## Model selection
 
-Per-agent models and effort levels are set in `opencode.json` — read them there. Each agent's system prompt lives in `prompts/<agent>.txt`, referenced from `opencode.json` via `"prompt": "{file:./prompts/<agent>.txt}"`. There are deliberately no `agents/*.md` files: file-based agent definitions override the `agent` block in `opencode.json`, so a stray markdown file silently wins over this config. Define agents here, not in `agents/`.
+Per-agent models and effort levels are set in `opencode.json` — read them there. Each agent's system prompt lives in `prompts/<agent>.txt`, referenced from `opencode.json` via `"system": "{file:./prompts/<agent>.txt}"`. There are deliberately no `agents/*.md` files: file-based agent definitions override the `agents` block in `opencode.json`, so a stray markdown file silently wins over this config. Define agents here, not in `agents/`.
 
 Before choosing a non-default model, overriding `/model`, or escalating a tier, read [MODELS.md](MODELS.md) for cap tiers and request budgets, effort-level vocabularies, and the coder/reviewer family rule.
