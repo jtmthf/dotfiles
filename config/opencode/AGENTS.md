@@ -2,7 +2,7 @@
 
 Delegate when a task matches one of these:
 
-- **Reconnaissance** — you do not yet know where something lives, or how an unfamiliar area works: `@explore` (say quick / medium / very thorough).
+- **Reconnaissance** — you do not yet know where something lives, or how an unfamiliar area works: `@explore` with `background=true`, asking for the file:line map you need rather than a survey (say quick / medium / very thorough).
 - **External docs** — library, framework, API or dependency behaviour: `@scout`.
 - **Tests** — writing or running them: `@tester`.
 - **Other shell sequences** — git (`status`/`diff`/`add`/`commit`/`log`), installs, builds, linters: `@runner`.
@@ -12,7 +12,7 @@ Delegate when a task matches one of these:
 - **Review before merge**: `@reviewer`.
 - **Documentation**: `@documenter`.
 
-Read the file yourself when you already know it is the one you will edit; run a single read-only command yourself, and hand over the sequence. For complex features, switch to the `@orchestrator` primary agent. Run independent delegations in parallel.
+Read the file yourself when you already know it is the one you will edit; run a single read-only command yourself, and hand over the sequence. When `@explore` returns a map, work from it instead of reading the same files again. For complex features, switch to the `@orchestrator` primary agent. Run independent delegations in parallel.
 
 ## Model selection
 
