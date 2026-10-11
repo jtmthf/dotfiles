@@ -85,5 +85,11 @@ export HOMEBREW_NO_ANALYTICS=1
 # GPG TTY for signing (compute once, persist for the session)
 export GPG_TTY="${GPG_TTY:-$(tty)}"
 
+# Pass an unmatched glob through as written, as bash does, instead of
+# aborting the command line: `grep --include=*.rs` then works unquoted.
+# Set here, not in .zshrc, so non-interactive shells (Claude Code, `zsh -c`)
+# get it too.
+setopt NO_NOMATCH
+
 # Dotfiles directory
 export DOTFILES="$HOME/.dotfiles"
