@@ -12,7 +12,16 @@ Delegate when a task matches one of these:
 - **Review before merge**: `@reviewer`.
 - **Documentation**: `@documenter`.
 
-Read the file yourself when you already know it is the one you will edit; run a single read-only command yourself, and hand over the sequence. When `@explore` returns a map, work from it instead of reading the same files again. For complex features, switch to the `@orchestrator` primary agent. Run independent delegations in parallel.
+Read the file yourself when you already know it is the one you will edit; run a single read-only command yourself, and hand over the sequence. When `@explore` returns a map, work from it instead of reading the same files again. For complex features, switch to the `@orchestrator` primary agent. Run independent delegations in parallel with `background: true`; use foreground only when your next step needs the result.
+
+## Budget and stopping
+
+These apply to every agent, and above all to subagents, whose step budget is capped in `opencode.json`:
+
+- Return a result before the step budget runs out — on the final step tools are removed and you must summarise.
+- If the same command or approach fails twice, stop and report what you tried and the exact error. Do not try it a third time.
+- Never run watch modes, dev servers, or interactive commands in the foreground. Use non-interactive flags (`CI=1`, `vitest run`, `--watch=false`) or `background: true`.
+- A partial result with a clear "blocked on X" beats continuing to loop. End subagent reports with: Done / Changed / Blocked / Next.
 
 ## Model selection
 

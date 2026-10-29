@@ -82,7 +82,7 @@
     },
     "plan": {
       "mode": "all",
-      "model": "opencode-go/glm-5.3-flash#high",
+      "model": "opencode-go/kimi-k3.1-pro",
       "permissions": [
         {
           "action": "shell",
@@ -264,7 +264,7 @@
     "orchestrator": {
       "description": "Primary agent for complex multi-step work. Decomposes tasks, delegates to specialized subagents, and integrates results. Does not write application code directly.",
       "mode": "primary",
-      "model": "opencode-go/glm-5.3-flash#low",
+      "model": "opencode-go/kimi-k3.1-pro",
       "system": "{file:./prompts/orchestrator.txt}",
       "permissions": [
         {
@@ -286,16 +286,19 @@
     },
     "general": {
       "mode": "all",
-      "model": "opencode-go/glm-5.3-flash#high"
+      "model": "opencode-go/deepseek-v4.1-flash#max",
+      "steps": 40
     },
     "explore": {
       "mode": "all",
-      "model": "opencode-go/mimo-v2.5"
+      "model": "opencode-go/glm-5.3-flash#high",
+      "steps": 25
     },
     "scout": {
       "description": "Read-only agent for external docs and dependency research. Use this when you need current library/framework/API documentation, version-specific behavior, or to cross-reference local dependency usage against upstream source.",
       "mode": "subagent",
-      "model": "opencode-go/qwen3.8-flash#medium",
+      "model": "opencode-go/glm-5.3-flash#high",
+      "steps": 20,
       "system": "{file:./prompts/scout.txt}",
       "permissions": [
         {
@@ -353,13 +356,9 @@
     "reviewer": {
       "description": "Read-only code reviewer. Use for quality, security, and maintainability feedback before merging changes.",
       "mode": "subagent",
-      "model": "opencode-go/kimi-k2.7-code",
+      "model": "opencode-go/kimi-k3.1-pro",
+      "steps": 20,
       "system": "{file:./prompts/reviewer.txt}",
-      "request": {
-        "body": {
-          "temperature": 0.1
-        }
-      },
       "permissions": [
         {
           "action": "edit",
@@ -557,12 +556,14 @@
       "description": "Implements a single, bounded coding task from a clear spec. Use when a task has already been decomposed.",
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4.1-flash#max",
+      "steps": 40,
       "system": "{file:./prompts/coder.txt}"
     },
     "runner": {
       "description": "Executes bounded shell command sequences: running tests, git operations (status/diff/add/commit/log), installs, builds, linters. Reports output verbatim. Does not write or edit application code.",
       "mode": "subagent",
-      "model": "opencode-go/mimo-v2.5",
+      "model": "opencode-go/glm-5.3-flash#high",
+      "steps": 8,
       "system": "{file:./prompts/runner.txt}",
       "permissions": [
         {
@@ -580,13 +581,15 @@
     "tester": {
       "description": "Writes and runs tests, reports failures verbatim. Does not refactor production code.",
       "mode": "subagent",
-      "model": "opencode-go/glm-5.3-flash#high",
+      "model": "opencode-go/deepseek-v4.1-flash#max",
+      "steps": 30,
       "system": "{file:./prompts/tester.txt}"
     },
     "documenter": {
       "description": "Writes and updates Markdown documentation. Can create and edit Markdown files freely; changes to any other file type require confirmation.",
       "mode": "subagent",
-      "model": "opencode-go/gpt-6-luna",
+      "model": "opencode-go/glm-5.3-flash#high",
+      "steps": 20,
       "system": "{file:./prompts/documenter.txt}",
       "permissions": [
         {
@@ -604,13 +607,9 @@
     "architect": {
       "description": "Designs architecture, APIs, and migration plans. Read-only; produces specs and ADRs.",
       "mode": "subagent",
-      "model": "opencode-go/glm-5.3#max",
+      "model": "opencode-go/kimi-k3.1-pro",
+      "steps": 20,
       "system": "{file:./prompts/architect.txt}",
-      "request": {
-        "body": {
-          "temperature": 0.2
-        }
-      },
       "permissions": [
         {
           "action": "edit",
@@ -626,15 +625,15 @@
     },
     "compaction": {
       "mode": "all",
-      "model": "opencode-go/mimo-v2.5"
+      "model": "opencode-go/mimo-v2.6-flash"
     },
     "title": {
       "mode": "all",
-      "model": "opencode-go/mimo-v2.5"
+      "model": "opencode-go/mimo-v2.6-flash"
     },
     "summary": {
       "mode": "all",
-      "model": "opencode-go/mimo-v2.5"
+      "model": "opencode-go/mimo-v2.6-flash"
     }
   }
 }

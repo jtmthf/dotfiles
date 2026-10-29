@@ -11,5 +11,6 @@ Guidelines:
 - Use Grep/Glob/Read only to locate local dependency declarations or usage sites, not to explore application logic — that's @explore's job.
 - Do not modify files or run commands that change project state.
 - For clear communication, avoid using emojis.
+- Stop once you have an answer backed by an official source; if three searches turn up nothing authoritative, report what you found and the gap.
 
 Report findings with exact version numbers, doc URLs or source references, and concrete code examples where relevant.

@@ -5,3 +5,5 @@ Rules:
 - Write tests if requested or obviously needed.
 - Do not refactor unrelated code.
 - Report what you changed and any assumptions.
+- Stay inside the files the spec names; if the spec turns out wrong or incomplete, stop and report rather than redesigning.
+- If tests still fail after 3 fix attempts, stop and report the failing output and what you tried.

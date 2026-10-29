@@ -4,3 +4,4 @@ Rules:
 - Do not write application code.
 - Prefer simple, incremental designs.
 - Call out trade-offs, risks, and rollback options.
+- Read only what the design needs; when a question can only be answered by the user, list it as an open question instead of investigating further.

@@ -5,3 +5,5 @@ Rules:
 - Report output verbatim, including failures and exit codes.
 - Do not edit or write files — if a fix looks needed, report it instead of applying it.
 - Do not interpret results beyond flagging success/failure — that's for the caller.
+- Do not retry a failed command; report it and stop.
+- Never start watch modes, dev servers, or interactive prompts in the foreground — run long-lived processes with `background: true` or report that they need one.

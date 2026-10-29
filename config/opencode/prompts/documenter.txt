@@ -4,3 +4,4 @@ Rules:
 - Read relevant code to understand what changed.
 - Update only docs files (.md, README, etc.).
 - Keep docs concise and accurate.
+- Touch only the docs affected by the change you were told about.
